@@ -1,0 +1,3488 @@
+{
+ "735": {
+  "source": "1.16",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 16,
+  "keep_alive_s2c": 32,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": null,
+  "pong_c2s": null,
+  "set_compression": null,
+  "join_game": 37,
+  "play_disconnect": 26,
+  "respawn": 58,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "736": {
+  "source": "1.16.1",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 16,
+  "keep_alive_s2c": 32,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": null,
+  "pong_c2s": null,
+  "set_compression": null,
+  "join_game": 37,
+  "play_disconnect": 26,
+  "respawn": 58,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "751": {
+  "source": "1.16.2",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 16,
+  "keep_alive_s2c": 31,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": null,
+  "pong_c2s": null,
+  "set_compression": null,
+  "join_game": 36,
+  "play_disconnect": 25,
+  "respawn": 57,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "753": {
+  "source": "1.16.2",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 16,
+  "keep_alive_s2c": 31,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": null,
+  "pong_c2s": null,
+  "set_compression": null,
+  "join_game": 36,
+  "play_disconnect": 25,
+  "respawn": 57,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "754": {
+  "source": "1.16.2",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 16,
+  "keep_alive_s2c": 31,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": null,
+  "pong_c2s": null,
+  "set_compression": null,
+  "join_game": 36,
+  "play_disconnect": 25,
+  "respawn": 57,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "755": {
+  "source": "1.17",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 15,
+  "keep_alive_s2c": 33,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": 48,
+  "pong_c2s": 29,
+  "set_compression": null,
+  "join_game": 38,
+  "play_disconnect": 26,
+  "respawn": 61,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "756": {
+  "source": "1.17.1",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 15,
+  "keep_alive_s2c": 33,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": 48,
+  "pong_c2s": 29,
+  "set_compression": null,
+  "join_game": 38,
+  "play_disconnect": 26,
+  "respawn": 61,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "757": {
+  "source": "1.18",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 15,
+  "keep_alive_s2c": 33,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": 48,
+  "pong_c2s": 29,
+  "set_compression": null,
+  "join_game": 38,
+  "play_disconnect": 26,
+  "respawn": 61,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "758": {
+  "source": "1.18.2",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ]
+  ],
+  "keep_alive_c2s": 15,
+  "keep_alive_s2c": 33,
+  "chat": 3,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": 48,
+  "pong_c2s": 29,
+  "set_compression": null,
+  "join_game": 38,
+  "play_disconnect": 26,
+  "respawn": 61,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "759": {
+  "source": "1.19",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "container",
+      [
+       {
+        "name": "timestamp",
+        "type": "i64"
+       },
+       {
+        "name": "publicKey",
+        "type": [
+         "buffer",
+         {
+          "countType": "varint"
+         }
+        ]
+       },
+       {
+        "name": "signature",
+        "type": [
+         "buffer",
+         {
+          "countType": "varint"
+         }
+        ]
+       }
+      ]
+     ]
+    ]
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 17,
+  "keep_alive_s2c": 30,
+  "chat": 4,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "buffer",
+     {
+      "countType": "varint"
+     }
+    ]
+   ],
+   [
+    "signedPreview",
+    "bool"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": 45,
+  "pong_c2s": 31,
+  "set_compression": null,
+  "join_game": 35,
+  "play_disconnect": 23,
+  "respawn": 59,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "760": {
+  "source": "1.19.2",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "container",
+      [
+       {
+        "name": "timestamp",
+        "type": "i64"
+       },
+       {
+        "name": "publicKey",
+        "type": [
+         "buffer",
+         {
+          "countType": "varint"
+         }
+        ]
+       },
+       {
+        "name": "signature",
+        "type": [
+         "buffer",
+         {
+          "countType": "varint"
+         }
+        ]
+       }
+      ]
+     ]
+    ]
+   ],
+   [
+    "playerUUID",
+    [
+     "option",
+     "UUID"
+    ]
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 18,
+  "keep_alive_s2c": 32,
+  "chat": 5,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "buffer",
+     {
+      "countType": "varint"
+     }
+    ]
+   ],
+   [
+    "signedPreview",
+    "bool"
+   ],
+   [
+    "previousMessages",
+    "previousMessages"
+   ],
+   [
+    "lastRejectedMessage",
+    [
+     "option",
+     [
+      "container",
+      [
+       {
+        "name": "sender",
+        "type": "UUID"
+       },
+       {
+        "name": "signature",
+        "type": [
+         "buffer",
+         {
+          "countType": "varint"
+         }
+        ]
+       }
+      ]
+     ]
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 47,
+  "pong_c2s": 32,
+  "set_compression": null,
+  "join_game": 37,
+  "play_disconnect": 25,
+  "respawn": 62,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": null,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "761": {
+  "source": "1.19.3",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    [
+     "option",
+     "UUID"
+    ]
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 17,
+  "keep_alive_s2c": 31,
+  "chat": 5,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 46,
+  "pong_c2s": 31,
+  "set_compression": null,
+  "join_game": 36,
+  "play_disconnect": 23,
+  "respawn": 61,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": 32,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "762": {
+  "source": "1.19.4",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    [
+     "option",
+     "UUID"
+    ]
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 18,
+  "keep_alive_s2c": 35,
+  "chat": 5,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 50,
+  "pong_c2s": 32,
+  "set_compression": null,
+  "join_game": 40,
+  "play_disconnect": 26,
+  "respawn": 65,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": 6,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "763": {
+  "source": "1.20",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    [
+     "option",
+     "UUID"
+    ]
+   ]
+  ],
+  "login_ack": null,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 18,
+  "keep_alive_s2c": 35,
+  "chat": 5,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 50,
+  "pong_c2s": 32,
+  "set_compression": null,
+  "join_game": 40,
+  "play_disconnect": 26,
+  "respawn": 65,
+  "has_config": false,
+  "settings_id": null,
+  "settings_fields": null,
+  "conf_finish": null,
+  "conf_end": null,
+  "conf_disconnect": null,
+  "chat_session_update": 6,
+  "conf_custom_payload_s": null,
+  "conf_custom_payload_c": null,
+  "bundle": null
+ },
+ "764": {
+  "source": "1.20.2",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 20,
+  "keep_alive_s2c": 36,
+  "chat": 5,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 51,
+  "pong_c2s": 35,
+  "set_compression": null,
+  "join_game": 41,
+  "play_disconnect": 27,
+  "respawn": 67,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ]
+  ],
+  "conf_finish": 2,
+  "conf_end": 2,
+  "conf_disconnect": 1,
+  "chat_session_update": 6,
+  "conf_custom_payload_s": 1,
+  "conf_custom_payload_c": 0,
+  "bundle": 0
+ },
+ "765": {
+  "source": "1.20.3",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 21,
+  "keep_alive_s2c": 36,
+  "chat": 5,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 51,
+  "pong_c2s": 36,
+  "set_compression": null,
+  "join_game": 41,
+  "play_disconnect": 27,
+  "respawn": 69,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ]
+  ],
+  "conf_finish": 2,
+  "conf_end": 2,
+  "conf_disconnect": 1,
+  "chat_session_update": 6,
+  "conf_custom_payload_s": 1,
+  "conf_custom_payload_c": 0,
+  "bundle": 0
+ },
+ "766": {
+  "source": "1.20.5",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ],
+   [
+    "strictErrorHandling",
+    "bool"
+   ]
+  ],
+  "keep_alive_c2s": 24,
+  "keep_alive_s2c": 38,
+  "chat": 6,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 53,
+  "pong_c2s": 39,
+  "set_compression": null,
+  "join_game": 43,
+  "play_disconnect": 29,
+  "respawn": 71,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 7,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "767": {
+  "source": "1.21.1",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ],
+   [
+    "strictErrorHandling",
+    "bool"
+   ]
+  ],
+  "keep_alive_c2s": 24,
+  "keep_alive_s2c": 38,
+  "chat": 6,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 3,
+  "ping_s2c": 53,
+  "pong_c2s": 39,
+  "set_compression": null,
+  "join_game": 43,
+  "play_disconnect": 29,
+  "respawn": 71,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 7,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "768": {
+  "source": "1.21.3",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 26,
+  "keep_alive_s2c": 39,
+  "chat": 7,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 4,
+  "ping_s2c": 55,
+  "pong_c2s": 41,
+  "set_compression": null,
+  "join_game": 44,
+  "play_disconnect": 29,
+  "respawn": 76,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 8,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "769": {
+  "source": "1.21.4",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 26,
+  "keep_alive_s2c": 39,
+  "chat": 7,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ]
+  ],
+  "chat_ack": 4,
+  "ping_s2c": 55,
+  "pong_c2s": 43,
+  "set_compression": null,
+  "join_game": 44,
+  "play_disconnect": 29,
+  "respawn": 76,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 8,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "770": {
+  "source": "1.21.5",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 26,
+  "keep_alive_s2c": 38,
+  "chat": 7,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": 4,
+  "ping_s2c": 54,
+  "pong_c2s": 43,
+  "set_compression": null,
+  "join_game": 43,
+  "play_disconnect": 28,
+  "respawn": 75,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 8,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "771": {
+  "source": "1.21.6",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 27,
+  "keep_alive_s2c": 38,
+  "chat": 8,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": 5,
+  "ping_s2c": 54,
+  "pong_c2s": 44,
+  "set_compression": null,
+  "join_game": 43,
+  "play_disconnect": 28,
+  "respawn": 75,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 9,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "772": {
+  "source": "1.21.8",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 27,
+  "keep_alive_s2c": 38,
+  "chat": 8,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": 5,
+  "ping_s2c": 54,
+  "pong_c2s": 44,
+  "set_compression": null,
+  "join_game": 43,
+  "play_disconnect": 28,
+  "respawn": 75,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 9,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "773": {
+  "source": "1.21.9",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 27,
+  "keep_alive_s2c": 43,
+  "chat": 8,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": 5,
+  "ping_s2c": 59,
+  "pong_c2s": 44,
+  "set_compression": null,
+  "join_game": 48,
+  "play_disconnect": 32,
+  "respawn": 80,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 9,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "774": {
+  "source": "1.21.11",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 27,
+  "keep_alive_s2c": 43,
+  "chat": 8,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": 5,
+  "ping_s2c": 59,
+  "pong_c2s": 44,
+  "set_compression": null,
+  "join_game": 48,
+  "play_disconnect": 32,
+  "respawn": 80,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 9,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "775": {
+  "source": "26.1",
+  "approx": false,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 28,
+  "keep_alive_s2c": 44,
+  "chat": 9,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": 6,
+  "ping_s2c": 61,
+  "pong_c2s": 45,
+  "set_compression": null,
+  "join_game": 49,
+  "play_disconnect": 32,
+  "respawn": 82,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 10,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "776": {
+  "source": "26.1",
+  "approx": true,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 28,
+  "keep_alive_s2c": 44,
+  "chat": 9,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": 61,
+  "pong_c2s": 45,
+  "set_compression": null,
+  "join_game": 49,
+  "play_disconnect": 32,
+  "respawn": 82,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 10,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ },
+ "777": {
+  "source": "26.1",
+  "approx": true,
+  "login_start": 0,
+  "login_start_fields": [
+   [
+    "username",
+    "string"
+   ],
+   [
+    "playerUUID",
+    "UUID"
+   ]
+  ],
+  "login_ack": 3,
+  "login_plugin_resp": 2,
+  "login_success": 2,
+  "login_compress": 3,
+  "login_disconnect": 0,
+  "login_plugin_req": 4,
+  "login_enc": 1,
+  "login_success_fields": [
+   [
+    "uuid",
+    "UUID"
+   ],
+   [
+    "username",
+    "string"
+   ],
+   [
+    "properties",
+    [
+     "array",
+     {
+      "countType": "varint",
+      "type": [
+       "container",
+       [
+        {
+         "name": "name",
+         "type": "string"
+        },
+        {
+         "name": "value",
+         "type": "string"
+        },
+        {
+         "name": "signature",
+         "type": [
+          "option",
+          "string"
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  ],
+  "keep_alive_c2s": 28,
+  "keep_alive_s2c": 44,
+  "chat": 9,
+  "chat_fields": [
+   [
+    "message",
+    "string"
+   ],
+   [
+    "timestamp",
+    "i64"
+   ],
+   [
+    "salt",
+    "i64"
+   ],
+   [
+    "signature",
+    [
+     "option",
+     [
+      "buffer",
+      {
+       "count": 256
+      }
+     ]
+    ]
+   ],
+   [
+    "offset",
+    "varint"
+   ],
+   [
+    "acknowledged",
+    [
+     "buffer",
+     {
+      "count": 3
+     }
+    ]
+   ],
+   [
+    "checksum",
+    "u8"
+   ]
+  ],
+  "chat_ack": null,
+  "ping_s2c": 61,
+  "pong_c2s": 45,
+  "set_compression": null,
+  "join_game": 49,
+  "play_disconnect": 32,
+  "respawn": 82,
+  "has_config": true,
+  "settings_id": 0,
+  "settings_fields": [
+   [
+    "locale",
+    "string"
+   ],
+   [
+    "viewDistance",
+    "i8"
+   ],
+   [
+    "chatFlags",
+    "varint"
+   ],
+   [
+    "chatColors",
+    "bool"
+   ],
+   [
+    "skinParts",
+    "u8"
+   ],
+   [
+    "mainHand",
+    "varint"
+   ],
+   [
+    "enableTextFiltering",
+    "bool"
+   ],
+   [
+    "enableServerListing",
+    "bool"
+   ],
+   [
+    "particleStatus",
+    [
+     "mapper",
+     {
+      "type": "varint",
+      "mappings": {
+       "0": "all",
+       "1": "decreased",
+       "2": "minimal"
+      }
+     }
+    ]
+   ]
+  ],
+  "conf_finish": 3,
+  "conf_end": 3,
+  "conf_disconnect": 2,
+  "chat_session_update": 10,
+  "conf_custom_payload_s": 2,
+  "conf_custom_payload_c": 1,
+  "bundle": 0
+ }
+}

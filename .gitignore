@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+.venv/
+venv/
+
+# Node
+node_modules/
+package-lock.json
+
+# Test servers / proxies (local)
+*.log
+tsrv_*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local proxy lists (keep data/ samples, ignore personal ones)
+proxies_local.txt

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcddos"
+version = "1.0.0"
+description = "Minecraft Java DDoS toolkit 1.16 -> 26.3 (Velocity/Bungee bypass, real-IP, auto proxies, bots)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "shelex1", email = "shelex1@t.me" }]
+keywords = ["minecraft", "ddos", "mc", "velocity", "bungeecord", "asyncio"]
+# Core runs on the standard library only (asyncio + zlib).
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+fetch = ["aiohttp>=3.8"]   # only needed for `--fetch-proxies` (public list download)
+dev = ["pytest"]
+
+[project.scripts]
+mcddos = "mcddos.cli:main_sync"
+
+[tool.setuptools]
+packages = ["mcddos"]
+
+[tool.setuptools.package-data]
+mcddos = ["data/*.json"]
