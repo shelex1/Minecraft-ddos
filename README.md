@@ -49,6 +49,7 @@
 | `realip` | Ищет **реальный IP бэкенда** за Velocity/Bungee (prelogin + subnet-скан) |
 | `proxies` | Авто-пул прокси: fetch публичных списков → верификация → переиспользование |
 | `detect` | **Авто-детект**: сам находит версию + реальный IP + капчу/регистрацию |
+| `playtest` | **Заход как реальный игрок**: логин + keepalive + чат + отчёт что произошло |
 
 ### Ключевые фишки
 
@@ -95,6 +96,40 @@ mcddos mixed play.example.com 25565 -v 1.20.4 -w 30 -n 10 -t 120
 | `--fetch-proxies` | догрузить публичные списки прокси и верифицировать |
 | `--realip` | найти реальный IP (prelogin + subnet-скан) |
 | `--json` | JSON-вывод для `status`/`realip` |
+
+---
+
+## 🎮 PlayTest — заход как реальный игрок
+
+`tools/playtest.py` — подключается к серверу **как настоящий игрок** и сам
+определяет всё: версию, реальный IP, что произошло (в мире / кик / капча /
+регистрация / whitelist / online mode). Держит соединение (keepalive),
+пишет в чат и выдаёт подробный отчёт.
+
+```bash
+# базовый заход (авто-детект версии)
+python3 tools/playtest.py play.example.com 25565
+
+# с указанием версии и длительностью
+python3 tools/playtest.py play.example.com 25565 -v 1.20.4 --stay 90 --chat "hi"
+
+# через прокси / авто-пул прокси (обход IP-фильтров)
+python3 tools/playtest.py play.example.com 25565 --fetch 300
+python3 tools/playtest.py play.example.com 25565 --proxy socks5://ip:port
+
+# сохранить JSON-отчёт
+python3 tools/playtest.py play.example.com 25565 --out report.json
+```
+
+Результат — JSON + сводка:
+```
+version  : 1.20.4 (protocol 765)
+real IP  : 203.0.113.77 [bungeecord:pre_login:25566 via direct]
+joined   : True  join_game=False
+keeps    : 4  chats=1
+verdict  : JOINED (play state; соединение живое, keepalive ок)
+# либо:  verdict  : CAPTCHA: Please solve the captcha ...
+```
 
 ---
 
@@ -152,6 +187,7 @@ tests/                   # локальные тесты (нужен node + mine
   smoke_*.py, chat_test.py, proxytest.py
 
 tools/                   # диагностические / экспериментальные скрипты
+  playtest.py          # ★ заход как реальный игрок + полный отчёт
   extract_*.py           # извлечение packets.json из minecraft-data
   check_proxies.py       # проверка живости прокси + гео egress-IP
   cl_*.py, coreland_*.py, rawlogin*, zraw*, fullscan*  # диагностика серверов

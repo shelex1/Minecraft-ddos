@@ -28,6 +28,62 @@ def pkt_info(pvn):
     return _PKTS.get(str(pvn), {})
 
 
+def _kick_cleanness(s):
+    """Fraction of printable ASCII chars (0x20-0x7e)."""
+    if not s:
+        return 0.0
+    ok = sum(1 for ch in s if 0x20 <= ord(ch) <= 0x7e)
+    return ok / len(s)
+
+
+def _longest_printable(data):
+    best, cur = "", ""
+    for b in data:
+        if 0x20 <= b <= 0x7e:
+            cur += chr(b)
+        else:
+            if len(cur) > len(best):
+                best = cur
+            cur = ""
+    if len(cur) > len(best):
+        best = cur
+    return best
+
+
+def _extract_kick(payload, pvn):
+    """Extract human kick text (legacy string / JSON / NBT chat component)."""
+    if not payload:
+        return None
+    # A) JSON string component (pre-1.20.2): cleanest
+    try:
+        j = json.loads(payload.decode("utf-8", "replace"))
+        if isinstance(j, dict):
+            v = j.get("text") or j.get("reason") or j.get("extra")
+            if isinstance(v, str) and v.strip():
+                return v
+            if isinstance(v, list):
+                t = " ".join(x.get("text", "") if isinstance(x, dict) else str(x) for x in v)
+                if t.strip():
+                    return t
+        elif isinstance(j, str) and j.strip():
+            return j
+    except Exception:
+        pass
+    # B) legacy plain string (1.16-1.19.3): only if clean printable
+    try:
+        r = mc.Reader(payload, pvn)
+        s = r.read_string()
+        if s and s.strip() and _kick_cleanness(s) >= 0.9:
+            return s
+    except Exception:
+        pass
+    # C) NBT chat component (1.20.2+): longest printable run (>=8 chars)
+    best = _longest_printable(payload)
+    if len(best) >= 8:
+        return best.lstrip('+-: ') or None
+    return None
+
+
 class MCConnError(Exception):
     pass
 
@@ -290,7 +346,7 @@ class MCConn:
                     payload += uuidb
         return payload
 
-    async def _handle_prelogin(self, channel, data):
+    def _handle_prelogin(self, channel, data):
         """Parse bungee/velocity prelogin to find backend."""
         if channel == "bungeecord:pre_login":
             try:
@@ -373,11 +429,7 @@ class MCConn:
                         await self._send_packet(mc.varint(self._login_ack))
                     break
                 if pid == self._login_disconnect:
-                    try:
-                        r = mc.Reader(payload, self.pvn)
-                        self.kick_reason = r.read_string()
-                    except Exception:
-                        self.kick_reason = "kicked"
+                    self.kick_reason = _extract_kick(payload, self.pvn) or "kicked"
                     return False
                 if pid == self._login_enc:
                     if not self.online:
@@ -441,11 +493,15 @@ class MCConn:
                 except Exception:
                     pass
                 return True
+            if pid == info.get("join_game"):
+                # server jumped straight into play (skipped conf_end)
+                self._join_game = payload
+                return True
+            if pid == self._play_disconnect:
+                self.kick_reason = _extract_kick(payload, self.pvn) or "config kick"
+                return False
             if pid == cdis:
-                try:
-                    self.kick_reason = mc.Reader(payload, self.pvn).read_string()
-                except Exception:
-                    self.kick_reason = "config kick"
+                self.kick_reason = _extract_kick(payload, self.pvn) or "config kick"
                 return False
         return False
 
@@ -471,10 +527,7 @@ class MCConn:
                     pass
                 return
             if pid == self._play_disconnect:
-                try:
-                    self.kick_reason = mc.Reader(payload, self.pvn).read_string()
-                except Exception:
-                    self.kick_reason = "kicked"
+                self.kick_reason = _extract_kick(payload, self.pvn) or "kicked"
                 return
 
     # ---- play state -------------------------------------------------------

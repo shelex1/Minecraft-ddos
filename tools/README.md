@@ -3,6 +3,9 @@
 Экспериментальный код (сырой, без единого формата). Группы:
 
 - **`detect.py`** (в корне) — авто-детект: версия + реальный IP + капча.
+- **`playtest.py`** — заход на сервер **как реальный игрок**: авто-версия,
+  реальный IP (prelogin), логин → play, keepalive, чат, отчёт что произошло
+  (JOINED / CAPTCHA / REGISTRATION / whitelist / online mode / KICK).
 - **Извлечение packets.json** — `extract_final.py`, `extract_ids.py`,
   `extract_by_dir.py`, `extract_versions.py`, `patch_ids.py`
   (извлекают ID пакетов из `minecraft-data` → `mcddos/data/packets.json`).
