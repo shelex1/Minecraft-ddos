@@ -121,10 +121,11 @@ python3 tools/playtest.py play.example.com 25565 --proxy socks5://ip:port
 python3 tools/playtest.py play.example.com 25565 --out report.json
 ```
 
-Результат — JSON + сводка:
+Результат — JSON + сводка (ниже — **пример вывода**, снят на мок-сервере
+BungeeCord для проверки prelogin; реальные значения зависят от сервера):
 ```
 version  : 1.20.4 (protocol 765)
-real IP  : 203.0.113.77 [bungeecord:pre_login:25566 via direct]
+real IP  : 203.0.113.77 [bungeecord:pre_login:25566 via direct]  # TEST-NET-3 = мок
 joined   : True  join_game=False
 keeps    : 4  chats=1
 verdict  : JOINED (play state; соединение живое, keepalive ок)
