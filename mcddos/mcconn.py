@@ -84,6 +84,60 @@ def _extract_kick(payload, pvn):
     return None
 
 
+def _chat_component_to_text(obj):
+    """Flatten a chat component (dict/list/str) to plain text."""
+    if obj is None:
+        return ""
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, list):
+        return "".join(_chat_component_to_text(x) for x in obj)
+    if isinstance(obj, dict):
+        parts = []
+        if isinstance(obj.get("text"), str):
+            parts.append(obj["text"])
+        extra = obj.get("extra")
+        if extra:
+            parts.append(_chat_component_to_text(extra))
+        return "".join(parts)
+    return ""
+
+
+def extract_chat_text(payload, pvn):
+    """Extract readable text from a chat/system_chat payload.
+
+    Handles:
+      * <=1.18  chat:           {message: <JSON string>, ...}
+      * 1.19    system_chat:    {content: <JSON string>, type: varint}
+      * 1.19.4+ system_chat:    {content: <NBT component>, isActionBar: bool}
+    Returns (text, is_action_bar).
+    """
+    if not payload:
+        return None, False
+    text = None
+    action_bar = False
+    # 1) read the leading string (JSON or plain) — legacy + 1.19/1.19.3
+    try:
+        r = mc.Reader(payload, pvn)
+        s = r.read_string()
+        if s and s.strip():
+            if s.lstrip()[:1] in ("{", "["):
+                try:
+                    text = _chat_component_to_text(json.loads(s))
+                except Exception:
+                    text = s
+            elif _kick_cleanness(s) >= 0.9:
+                text = s
+    except Exception:
+        pass
+    # 2) NBT chat component (1.19.4+): longest printable run
+    if not text:
+        best = _longest_printable(payload)
+        if len(best) >= 2:
+            text = best
+    return text, action_bar
+
+
 class MCConnError(Exception):
     pass
 
@@ -591,9 +645,148 @@ class MCConn:
         return await self._read_packet()
 
 
+    # ---- command / chat recon ---------------------------------------------
+    async def send_command(self, cmd):
+        """Send a command to the server via the chat packet.
+
+        Accepts '/version' or 'version' (adds the leading slash if missing).
+        Returns True if the packet was sent.
+        """
+        if not cmd.startswith("/"):
+            cmd = "/" + cmd
+        return await self.chat(cmd)
+
+    async def tab_complete(self, text, timeout=None):
+        """Send a tab-complete request and wait for the response.
+
+        Returns list of completion strings (may be empty).
+        Works on all supported versions (tab_complete <=1.19.2,
+        chat_suggestions >=1.19.3).
+        """
+        info = pkt_info(self.pvn)
+        req_id = info.get("tab_c2s")
+        resp_old = info.get("tab_s2c")       # <=1.19.2
+        resp_new = info.get("chatsug_s2c")   # >=1.19.3
+        if req_id is None:
+            return []
+        txn = (self._keepalive_counter + 1) & 0x7FFFFFFF
+        self._keepalive_counter = txn
+        payload = mc.varint(txn) + mc.str_field(text)
+        await self._send_packet(mc.varint(req_id) + payload)
+
+        deadline = time.time() + (timeout or self.timeout)
+        matches = []
+        while time.time() < deadline:
+            try:
+                pid, payload = await asyncio.wait_for(self._read_packet(), timeout=max(0.2, deadline - time.time()))
+            except asyncio.TimeoutError:
+                break
+            if pid is None:
+                break
+            # echo keepalives / pings to stay alive
+            if pid == info.get("keep_alive_s2c"):
+                try:
+                    v = mc.Reader(payload, self.pvn).read_i64()
+                    await self.keepalive(v)
+                except Exception:
+                    pass
+                continue
+            if pid == info.get("ping_s2c"):
+                try:
+                    v = mc.Reader(payload, self.pvn).read_i32()
+                    await self.pong(v)
+                except Exception:
+                    pass
+                continue
+            if pid == resp_old:
+                matches = _parse_tab_complete(payload)
+                break
+            if pid == resp_new:
+                entries = _parse_chat_suggestions(payload)
+                if entries:
+                    matches = entries
+                    break
+        return matches
+
+    async def collect_chat(self, seconds=3.0, echo_keepalive=True):
+        """Read packets for `seconds`, returning all chat texts seen.
+
+        Keeps the connection alive (echoes keepalive/ping) and tolerates
+        non-chat packets. Returns a list of (text, is_action_bar) tuples.
+        """
+        info = pkt_info(self.pvn)
+        chat_id = info.get("chat_s2c")
+        deadline = time.time() + seconds
+        out = []
+        while time.time() < deadline:
+            try:
+                pid, payload = await asyncio.wait_for(self._read_packet(), timeout=max(0.1, deadline - time.time()))
+            except asyncio.TimeoutError:
+                break
+            if pid is None:
+                break
+            if pid == info.get("keep_alive_s2c") and echo_keepalive:
+                try:
+                    v = mc.Reader(payload, self.pvn).read_i64()
+                    await self.keepalive(v)
+                except Exception:
+                    pass
+                continue
+            if pid == info.get("ping_s2c") and echo_keepalive:
+                try:
+                    v = mc.Reader(payload, self.pvn).read_i32()
+                    await self.pong(v)
+                except Exception:
+                    pass
+                continue
+            if pid == chat_id:
+                text, ab = extract_chat_text(payload, self.pvn)
+                if text:
+                    out.append((text, ab))
+        return out
+
+
 def socket_inet_aton(host):
     import socket
     return socket.inet_aton(host)
+
+
+def _parse_tab_complete(payload):
+    """Parse tab_complete s2c (<=1.19.2): {txn, start, length, matches:[{match,tooltip}]}."""
+    out = []
+    try:
+        r = mc.Reader(payload, 0)
+        r.read_varint()  # transactionId
+        r.read_varint()  # start
+        r.read_varint()  # length
+        n = r.read_varint()
+        for _ in range(n):
+            m = r.read_string()
+            # optional tooltip: varint present(0/1)
+            try:
+                pres = r.read_varint()
+                if pres:
+                    r.read_string()
+            except Exception:
+                pass
+            out.append(m)
+    except Exception:
+        pass
+    return out
+
+
+def _parse_chat_suggestions(payload):
+    """Parse chat_suggestions s2c (>=1.19.3): {action:varint, entries:[string]}."""
+    out = []
+    try:
+        r = mc.Reader(payload, 0)
+        r.read_varint()  # action
+        n = r.read_varint()
+        for _ in range(n):
+            out.append(r.read_string())
+    except Exception:
+        pass
+    return out
 
 
 def _encode_setting(name, ftype, value):

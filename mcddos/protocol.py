@@ -52,6 +52,14 @@ class Reader:
         v = self.read_bytes(8)
         return struct.unpack(">q", v)[0]
 
+    def read_i32(self) -> int:
+        v = self.read_bytes(4)
+        return struct.unpack(">i", v)[0]
+
+    def read_i16(self) -> int:
+        v = self.read_bytes(2)
+        return struct.unpack(">h", v)[0]
+
     def read_bytes(self, n: int) -> bytes:
         if n < 0 or self.pos + n > len(self.data):
             raise MCReadError("bytes overflow")
@@ -185,7 +193,8 @@ def handshake_payload(protocol: int, ip: str, port: int, next_state: int) -> byt
 
 def handshake_packet(protocol: int, ip: str, port: int, next_state: int) -> bytes:
     payload = handshake_payload(protocol, ip, port, next_state)
-    return varint(len(payload)) + varint(0x00) + payload
+    # frame length covers packet-id byte + payload
+    return varint(len(payload) + 1) + varint(0x00) + payload
 
 
 def status_request_packet() -> bytes:

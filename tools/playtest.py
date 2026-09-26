@@ -4,7 +4,8 @@ PlayTest — заход на сервер КАК РЕАЛЬНЫЙ ИГРОК (se
 =========================================================
 Подключается к MC-серверу как настоящий игрок и отчитывается, что произошло:
   * авто-определяет версию сервера (если не указана -v)
-  * находит РЕАЛЬНЫЙ IP бэкенда (за Velocity/Bungee: prelogin + subnet-скан)
+  * сам находит порт через SRV-запись (_minecraft._tcp), если не указан
+  * находит РЕАЛЬНЫЙ IP+порт бэкенда (prelogin + порт-скан хоста + subnet-скан)
   * делает полный логин (handshake -> login -> configuration -> play)
   * держит соединение (keepalive), пишет в чат, переживает кики/respawn
   * держится на сервере T секунд и выдаёт подробный отчёт (JSON + сводка)
@@ -253,6 +254,17 @@ async def amain(args):
     except Exception as e:
         log(f"  TCP: closed ({type(e).__name__})")
 
+    # SRV record: many servers hide the real MC port behind SRV (_minecraft._tcp)
+    if not args.no_srv:
+        srv_p = await asyncio.get_running_loop().run_in_executor(None, realip_mod.srv_port, host)
+        if srv_p:
+            result["srv_port"] = srv_p
+            if srv_p != port:
+                log(f"  SRV _minecraft._tcp -> port {srv_p} (was {port}); using {srv_p}")
+                result["notes"].append(f"SRV port {srv_p} replaces {port}")
+                port = srv_p
+                result["port"] = port
+
     # ---- proxies ----
     proxies = []
     seen = set()
@@ -360,23 +372,77 @@ async def amain(args):
         result["online_mode"] = True
         result["kick_type"] = "online_mode"
 
-    # ---- phase 3: real IP subnet scan ----
-    need_scan = (result["real_ip"] and not result["joined"]) or args.scan_subnet
-    if need_scan:
-        log(f"\n=== [3] Real-IP subnet scan (protocol {pvn}) ===")
-        try:
-            found = await realip_mod.find_real_ip_async(
-                host, port, protocol=pvn, timeout=args.timeout,
-                scan_subnet=True, workers=args.workers, log=lambda *a: None)
-            for f in found:
-                if not result["real_ip"]:
-                    result["real_ip"] = f["ip"]
-                    result["real_ip_source"] = f["via"]
-                    log(f"  real IP: {f['ip']}:{f['port']} ({f['via']})")
-        except Exception as e:
-            log(f"  subnet scan error: {e}")
-    else:
-        log(f"\n=== [3] Real-IP: skipped (no proxy signal) ===")
+    # ---- phase 2.5: login DIRECTLY to the discovered real backend ----
+    if (not result["joined"] and result["real_ip"]
+            and result.get("real_backend_port") and not args.no_backend_login):
+        bport = result["real_backend_port"]
+        bproto = pvn
+        # use the protocol reported by the backend itself if we have it
+        for d in result.get("discovered", []):
+            if d.get("port") == bport:
+                break
+        log(f"\n=== [2.5] Direct login to real backend {result['real_ip']}:{bport} ===")
+        rep2 = await play_once(result["real_ip"], bport, bproto, args.name,
+                               args.stay, args.chat, None, args.login_timeout)
+        if rep2["kick"] and rep2["kick"] not in result["kick_texts"]:
+            result["kick_texts"].append(rep2["kick"])
+        log(f"    joined={rep2['joined']} join_game={rep2['join_game']} "
+            f"keeps={rep2['keeps']} chats={rep2['chats']} state={rep2['state']} "
+            f"kick={rep2['kick']!r}")
+        if rep2["joined"]:
+            result["joined"] = True
+            result["join_game"] = rep2["join_game"]
+            result["keeps"] = rep2["keeps"]
+            result["chats"] = rep2["chats"]
+            result["respawns"] = rep2["respawns"]
+            result["state"] = "play"
+            result["working_source"] = f"direct-backend {result['real_ip']}:{bport}"
+            if rep2["kick"]:
+                result["kick"] = rep2["kick"]
+                result["kick_type"] = rep2["kick_type"]
+        elif rep2["kick"]:
+            result["kick"] = rep2["kick"]
+            result["kick_type"] = rep2["kick_type"]
+            if rep2["kick_type"] == "online_mode":
+                result["online_mode"] = True
+
+    # ---- phase 3: real-IP discovery (prelogin + same-host ports + /24 subnet) ----
+    log(f"\n=== [3] Real-IP discovery ===")
+    try:
+        force_subnet = bool(args.scan_subnet or (result["real_ip"] and not result["joined"]))
+        found = await realip_mod.find_real_ip_async(
+            host, port, protocol=pvn, timeout=args.timeout,
+            scan_subnet=force_subnet, scan_host=not args.no_host_scan,
+            workers=args.workers, log=log)
+        result["discovered"] = [{"ip": f.get("ip"), "port": f.get("port"),
+                                 "via": f.get("via"), "match": bool(f.get("match"))}
+                                for f in found]
+        for f in found:
+            tag = "MOTD-MATCH" if f.get("match") else f.get("via", "?")
+            log(f"  candidate: {f.get('ip')}:{f.get('port')} ({tag})")
+        # ranking: MOTD-match > prelogin (bungee/velocity) > subnet > direct
+        def rank(f):
+            if f.get("match"):
+                return 0
+            v = f.get("via", "")
+            if "prelogin" in v:
+                return 1
+            if v.startswith("subnet-scan"):
+                return 2
+            return 3
+        for f in sorted(found, key=rank):
+            if f.get("via") == "direct" and f.get("ip") == host:
+                continue  # frontend itself; only a fallback
+            if not result["real_ip"]:
+                result["real_ip"] = f.get("ip")
+                result["real_backend_port"] = f.get("port")
+                result["real_ip_source"] = f.get("via")
+                result["notes"].append(f"real IP {f.get('ip')}:{f.get('port')} ({f.get('via')})")
+                break
+        if not result["real_ip"]:
+            log("  no real-IP candidate found")
+    except Exception as e:
+        log(f"  discovery error: {type(e).__name__}: {e}")
 
     # ---- verdict ----
     if result["joined"] and result["join_game"]:
@@ -404,7 +470,8 @@ async def amain(args):
 
     log("\n--- summary ---")
     log(f"version  : {result['version']} (protocol {result['protocol']})")
-    log(f"real IP  : {result['real_ip']} [{result['real_ip_source']}]")
+    _bp = result.get("real_backend_port")
+    log(f"real IP  : {result['real_ip']}:{_bp if _bp else result['port']} [{result['real_ip_source']}]")
     log(f"joined   : {result['joined']}  join_game={result['join_game']}")
     log(f"keeps    : {result['keeps']}  chats={result['chats']}  respawns={result['respawns']}")
     if result["kick_texts"]:
@@ -432,7 +499,11 @@ def parse_args():
     ap.add_argument("--timeout", type=float, default=4.0, help="per-probe timeout (status)")
     ap.add_argument("--login-timeout", type=float, default=20.0, help="login/keepalive timeout")
     ap.add_argument("--workers", type=int, default=25)
-    ap.add_argument("--scan-subnet", action="store_true", help="force subnet scan for real IP")
+    ap.add_argument("--scan-subnet", action="store_true", help="force /24 subnet scan for real IP")
+    ap.add_argument("--no-srv", action="store_true", help="do not auto-detect port from SRV record")
+    ap.add_argument("--no-host-scan", action="store_true", help="skip same-host port scan")
+    ap.add_argument("--no-backend-login", action="store_true",
+                    help="do not try a direct login to the discovered real backend")
     ap.add_argument("--no-direct", action="store_true", help="skip direct connection attempt")
     ap.add_argument("--out", help="save JSON report to file")
     return ap.parse_args()
