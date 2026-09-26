@@ -3,9 +3,11 @@
 Экспериментальный код (сырой, без единого формата). Группы:
 
 - **`detect.py`** (в корне) — авто-детект: версия + реальный IP + капча.
-- **`playtest.py`** — заход на сервер **как реальный игрок**: авто-версия,
-  реальный IP (prelogin), логин → play, keepalive, чат, отчёт что произошло
-  (JOINED / CAPTCHA / REGISTRATION / whitelist / online mode / KICK).
+- **`playtest.py`** — заход на сервер **как реальный игрок**: сам находит
+  порт (SRV) и версию, сам находит **реальный IP+порт бэкенда** (SRV +
+  prelogin + полный MC status-скан портов хоста 1024..65535 + UUID-ранжирование
+  + login-пробы), логин → play (+ прямой логин на найденный бэкенд), keepalive,
+  чат, отчёт (JOINED / CAPTCHA / REGISTRATION / whitelist / online mode / KICK).
 - **Извлечение packets.json** — `extract_final.py`, `extract_ids.py`,
   `extract_by_dir.py`, `extract_versions.py`, `patch_ids.py`
   (извлекают ID пакетов из `minecraft-data` → `mcddos/data/packets.json`).
