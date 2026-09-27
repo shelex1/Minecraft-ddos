@@ -352,6 +352,11 @@ async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
     found = []
     if protocol is None:
         protocol = 767
+    # resolve domain -> IP so subnet scan works (host may be a domain)
+    host_ip, _ = resolve_host(host, port)
+    if host_ip != host:
+        log(f"[realip] {host} -> {host_ip}")
+        host = host_ip
 
     def probe():
         kind, data = prelogin_probe(host, port, protocol, timeout)

