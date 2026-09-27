@@ -84,7 +84,26 @@ mcddos tcp   play.example.com 25565 -w 100 -t 60
 mcddos login play.example.com 25565 -v 1.20.4 -w 20 -t 60
 mcddos bot   play.example.com 25565 -v 1.20.4 -n 30 --chat-every 5 -t 120
 mcddos mixed play.example.com 25565 -v 1.20.4 -w 30 -n 10 -t 120
+
+# обход анти-бот плагинов: profile key + signed chat (1.19+)
+mcddos bot   play.example.com 25565 -v 1.20.4 -n 30 --signed --offline-uuid -t 120
+mcddos login play.example.com 25565 -v 1.20.4 -w 20 --signed -t 60
 ```
+
+### Signed chat / profile key (`--signed`)
+
+Анти-бот плагины (Velocity/Bungee + anti-cheat) кикают ботов без
+**profile key** и **signed chat**. С флагом `--signed` каждый бот:
+
+- генерирует (или берёт общий `--share-key`) RSA-2048 профильный ключ;
+- 1.19 / 1.19.2 — кладёт ключ в `login_start.signature` (Mojang v1/v2);
+- 1.19.3+ — шлёт `chat_session_update` сразу после login success;
+- шлёт `minecraft:brand` + `minecraft:register` (vanilla-каналы);
+- подписывает каждое сообщение чата (SHA-256 + RSA);
+- `--offline-uuid` — Bungee offline UUID v3 в `login_start.playerUUID`.
+
+Ключ общий на всю волну по умолчанию (`--share-key`, генерация ~6 c один
+раз); `--own-key` — свой ключ на бота (дороже, медленнее старт).
 
 ### Основные флаги
 
@@ -98,6 +117,9 @@ mcddos mixed play.example.com 25565 -v 1.20.4 -w 30 -n 10 -t 120
 | `--fetch-proxies` | догрузить публичные списки прокси и верифицировать |
 | `--realip` | найти реальный IP (prelogin + subnet-скан) |
 | `--json` | JSON-вывод для `status`/`realip` |
+| `--signed` | profile key + signed chat (обход анти-бот, 1.19+) |
+| `--own-key` | свой RSA-2048 на бота (по умолчанию общий на волну) |
+| `--offline-uuid` | Bungee offline UUID v3 в login_start |
 
 ---
 
@@ -189,7 +211,7 @@ mcddos/                  ← основной пакет (pip install .)
   versions.py            # имя версии -> protocol (1.16..26.3)
   ed25519.py             # Ed25519 чистым Python (подписанный чат)
   mcconn.py              # ★ MCConn: handshake->status->login->config->play, прокси, prelogin
-  bots.py                # Bot / BotPool: keepalive, signed chat, reconnect, прокси
+  bots.py                # Bot / BotPool: keepalive, signed chat, reconnect, прокси, profile_key
   ddos.py                # потоки ping/tcp/login/mixed + статистика
   realip.py              # SRV, prelogin, wide-скан портов хоста, login-пробы, find_real_ip
   proxies.py             # parse/fetch (11 источников)/верификация прокси
@@ -218,7 +240,9 @@ docs/INSTRUKCIYA.md      # подробная инструкция по прое
 
 - `keep_alive` = **i64** во всех версиях; `ping/pong` = i32.
 - `login_acknowledged` ≥ 764; `configuration` state ≥ 764 (settings→finish).
-- Signed chat ≥ 1.19.3 (Ed25519): timestamp/salt/signature,
+- Signed chat: 1.19/1.19.2 — ключ в `login_start.signature` (Mojang v1/v2),
+  1.19.3+ — `chat_session_update` + timestamp/salt/signature (RSA-2048,
+  SHA-256; Mojang-подпись ключа не нужна в offline-режиме),
   ≥ 1.20.3 + offset/acknowledged — всё кодируется по версии.
 - Bundle (1.20.2+) id = 0; compression — varint-unescape.
 - Прокси: HTTP CONNECT + SOCKS4/5/5h; DNS через `socks5h`.

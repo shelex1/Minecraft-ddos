@@ -12,6 +12,7 @@ import time
 import zlib
 
 from . import protocol as mc
+from . import bypass
 from .fields import Cursor, build_type_table, read_varint, FieldReadError
 from .versions import protocol_of, guess_version_for_protocol
 
@@ -154,7 +155,9 @@ class MCConn:
     """
 
     def __init__(self, host, port=25565, timeout=10.0, proxy=None,
-                 username="ddoser", online=False, seed=None, log=None):
+                 username="ddoser", online=False, seed=None, log=None,
+                 profile_key=None, offline_uuid=None, send_brand=True,
+                 send_register=True):
         self.host = host
         self.port = port
         self.timeout = timeout
@@ -163,11 +166,16 @@ class MCConn:
         self.online = online
         self.seed = seed or os.urandom(32)
         self.log = log or (lambda *a: None)
+        self.profile_key = profile_key  # bypass.ProfileKey (signed chat / profile key)
+        self.send_brand = send_brand
+        self.send_register = send_register
+        self.offline_uuid = offline_uuid  # True/None=auto offline, False=zero
         self.pvn = None
         self.protocol = None
         self.state = "none"  # none/status/login/configuration/play
         self.compression = None
         self.kick_reason = None
+        self.player_uuid = None  # bytes(16) from login_success
         self.real_backend = None  # (ip, port, kind) from prelogin
         self._reader = None
         self._writer = None
@@ -176,6 +184,31 @@ class MCConn:
         self._bundle_buf = []  # queued bundled sub-packets
         self._join_game = None
         self._keepalive_counter = 0
+        self._chat_session_sent = False
+        self._last_chain_sig = None  # 1.19.2 chained chat
+
+    # ---- bypass helpers ---------------------------------------------------
+    def _offline_uuid(self):
+        if self.offline_uuid or (self.offline_uuid is None and not self.online):
+            return bypass.offline_uuid_bytes(self.username)
+        return b"\x00" * 16
+
+    async def _send_brand_register(self):
+        info = pkt_info(self.pvn)
+        cp = info.get("custom_payload_c2s")
+        if cp is None:
+            return
+        if self.send_brand:
+            try:
+                await self._send_packet(mc.varint(cp) + bypass.brand_payload("vanilla"))
+            except Exception:
+                pass
+        if self.send_register:
+            try:
+                await self._send_packet(mc.varint(cp) + bypass.register_payload(
+                    bypass.VANILLA_REGISTER_CHANNELS))
+            except Exception:
+                pass
 
     # ---- low level io -----------------------------------------------------
     async def _open(self):
@@ -385,20 +418,74 @@ class MCConn:
         info = pkt_info(self.pvn)
         fields = info.get("login_start_fields") or [["username", "string"]]
         payload = mc.varint(0) + mc.str_field(self.username)
+        pk = self.profile_key
         for name, ftype in fields:
             if name == "username":
                 continue
             if name == "signature":
-                # no signed chat key: option absent
-                payload += b"\x00"
+                # 1.19 / 1.19.2: profile key в login_start (option{timestamp,publicKey,signature})
+                if pk is not None:
+                    der = pk.public_der
+                    sig = pk.mojang_signature or b""
+                    payload += (b"\x01"
+                                + mc.i64(pk.expire_ms)
+                                + mc.varint(len(der)) + der
+                                + mc.varint(len(sig)) + sig)
+                else:
+                    payload += b"\x00"  # option absent
             elif name == "playerUUID":
                 is_opt = isinstance(ftype, list) and ftype[0] == "option"
-                uuidb = b"\x00" * 16
                 if is_opt:
-                    payload += b"\x00"  # absent (offline)
+                    # 1.19.2-1.20.1: option. offline vanilla шлёт v3 offline UUID.
+                    if self.offline_uuid or (self.offline_uuid is None and not self.online):
+                        payload += b"\x01" + self._offline_uuid()
+                    else:
+                        payload += b"\x00"  # absent
                 else:
-                    payload += uuidb
+                    # 1.20.2+: required UUID
+                    payload += self._offline_uuid()
         return payload
+
+    def _parse_login_success_uuid(self, payload):
+        """UUID игрока из login_success (16 байт)."""
+        try:
+            r = mc.Reader(payload, self.pvn)
+            b16 = r.read_bytes(16)
+            if len(b16) == 16:
+                return b16
+        except Exception:
+            pass
+        try:
+            r = mc.Reader(payload, self.pvn)
+            r.read_string()  # старое: username первым
+            b16 = r.read_bytes(16)
+            if len(b16) == 16:
+                return b16
+        except Exception:
+            pass
+        return None
+
+    async def _send_chat_session_update(self):
+        """1.19.3+: регистрируем профильный ключ (play c2s) сразу после LoginSuccess."""
+        if self._chat_session_sent or self.profile_key is None:
+            return
+        info = pkt_info(self.pvn)
+        csu = info.get("chat_session_update")
+        if csu is None:
+            return
+        pk = self.profile_key
+        der = pk.public_der
+        sig = pk.mojang_signature or b""
+        body = (mc.varint(csu)
+                + pk.session_uuid
+                + mc.i64(pk.expire_ms)
+                + mc.varint(len(der)) + der
+                + mc.varint(len(sig)) + sig)
+        try:
+            await self._send_packet(body)
+            self._chat_session_sent = True
+        except Exception:
+            pass
 
     def _handle_prelogin(self, channel, data):
         """Parse bungee/velocity prelogin to find backend."""
@@ -479,6 +566,8 @@ class MCConn:
                     continue
                 if pid == self._login_success:
                     self.state = "login_success"
+                    self.player_uuid = self._parse_login_success_uuid(payload)
+                    await self._send_chat_session_update()
                     if self._login_ack is not None:
                         await self._send_packet(mc.varint(self._login_ack))
                     break
@@ -537,6 +626,7 @@ class MCConn:
             if pid is None:
                 return True
             if pid == cend:
+                await self._send_brand_register()
                 return True
             # play-state packet: server already entered play (some servers
             # skip sending conf_end after the client already finished)
@@ -585,25 +675,47 @@ class MCConn:
                 return
 
     # ---- play state -------------------------------------------------------
+    def _sign_chat(self, text, ts_ms):
+        """-> (sig_bytes, ts_ms, salt, signed). version-dependent signable."""
+        pk = self.profile_key
+        if pk is None:
+            return None, ts_ms, None, False
+        salt = int.from_bytes(os.urandom(8), "big")
+        if salt >= (1 << 63):
+            salt -= (1 << 64)
+        if self.pvn >= 761:  # 1.19.3+ (useChatSessions)
+            sig = pk.rsa.sign(pk.chat_signable_v193(text, ts_ms, salt), "sha256")
+            return sig, ts_ms, salt, True
+        if self.pvn == 760:  # 1.19.2 chained
+            sig, ts_ms, salt = pk.sign_chat_192(text, ts_ms, salt, prev=None)
+            self._last_chain_sig = sig
+            return sig, ts_ms, salt, True
+        if self.pvn == 759:  # 1.19
+            sig, ts_ms, salt = pk.sign_chat_190(text, ts_ms, salt)
+            return sig, ts_ms, salt, True
+        return None, ts_ms, salt, False
+
     async def chat(self, text):
         info = pkt_info(self.pvn)
         cid = info.get("chat")
         if cid is None:
             return False
         fields = info.get("chat_fields") or [["message", "string"]]
+        ts_ms = int(time.time() * 1000)
+        sig, ts_ms, salt, signed = self._sign_chat(text, ts_ms)
 
         def _val(name, ftype):
             if name == "message":
                 return text
             if name == "timestamp":
-                return int(time.time())
+                return ts_ms
             if name == "salt":
-                v = int.from_bytes(os.urandom(8), "big")
-                # keep signed (i64)
-                if v >= (1 << 63):
-                    v -= (1 << 64)
-                return v
-            if name in ("signature", "lastRejectedMessage"):
+                return salt
+            if name == "signature":
+                if signed and sig:
+                    return sig
+                return None
+            if name == "lastRejectedMessage":
                 return None
             if name == "signedPreview":
                 return False

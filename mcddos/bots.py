@@ -13,6 +13,7 @@ import random
 import time
 
 from .mcconn import MCConn, MCConnError, pkt_info
+from . import bypass
 
 NAMES = [
     "Steve", "Alex", "Herobrine", "Notch", "Jeb", "Dinnerbone",
@@ -28,7 +29,8 @@ NAMES = [
 class Bot:
     def __init__(self, idx, host, port, version, proxy=None,
                  online=False, log=None, chat_every=8.0,
-                 name=None, username=None):
+                 name=None, username=None, signed=False,
+                 share_key=True, profile_key=None, offline_uuid=None):
         self.idx = idx
         self.host = host
         self.port = port
@@ -38,6 +40,10 @@ class Bot:
         self.log = log or (lambda *a: None)
         self.chat_every = chat_every
         self.username = username or _rand_name()
+        self.signed = signed
+        self.share_key = share_key
+        self.profile_key = profile_key
+        self.offline_uuid = offline_uuid
         self.conn = None
         self.joined = False
         self.kicks = 0
@@ -54,8 +60,17 @@ class Bot:
             self.log(f"[bot{self.idx:03d} {self.username}] " + " ".join(str(x) for x in a))
 
     async def _connect_once(self):
+        pk = self.profile_key
+        if pk is None and self.signed:
+            loop = asyncio.get_running_loop()
+            pk = await loop.run_in_executor(
+                None, bypass.make_profile_key, self.username, self.share_key)
+            self.profile_key = pk
+            self._log("signed key ready" if self.share_key else "own key ready")
         self.conn = MCConn(self.host, self.port, proxy=self.proxy,
-                           username=self.username, online=self.online, log=self._log)
+                           username=self.username, online=self.online,
+                           log=self._log, profile_key=pk,
+                           offline_uuid=self.offline_uuid)
         ok = await self.conn.login(self.version, wait_play=True)
         if ok:
             self.joined = True
@@ -152,7 +167,8 @@ class Bot:
 
 class BotPool:
     def __init__(self, host, port, version, count=20, proxy=None,
-                 online=False, log=None, chat_every=8.0, usernames=None):
+                 online=False, log=None, chat_every=8.0, usernames=None,
+                 signed=False, share_key=True, offline_uuid=None):
         self.host = host
         self.port = port
         self.version = version
@@ -162,6 +178,9 @@ class BotPool:
         self.log = log or (lambda *a: None)
         self.chat_every = chat_every
         self.usernames = usernames or []
+        self.signed = signed
+        self.share_key = share_key
+        self.offline_uuid = offline_uuid
         self.bots = []
 
     def spawn(self, n=None):
@@ -171,7 +190,9 @@ class BotPool:
             b = Bot(i, self.host, self.port, self.version,
                     proxy=self.proxy, online=self.online,
                     log=self.log, chat_every=self.chat_every, name=name,
-                    username=name)
+                    username=name, signed=self.signed,
+                    share_key=self.share_key,
+                    offline_uuid=self.offline_uuid)
             self.bots.append(b)
         return self.bots[len(self.bots) - n:] if n else []
 
