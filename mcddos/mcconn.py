@@ -157,7 +157,7 @@ class MCConn:
     def __init__(self, host, port=25565, timeout=10.0, proxy=None,
                  username="ddoser", online=False, seed=None, log=None,
                  profile_key=None, offline_uuid=None, send_brand=True,
-                 send_register=True):
+                 send_register=True, send_settings=False):
         self.host = host
         self.port = port
         self.timeout = timeout
@@ -169,6 +169,7 @@ class MCConn:
         self.profile_key = profile_key  # bypass.ProfileKey (signed chat / profile key)
         self.send_brand = send_brand
         self.send_register = send_register
+        self.send_settings = send_settings
         self.offline_uuid = offline_uuid  # True/None=auto offline, False=zero
         self.pvn = None
         self.protocol = None
@@ -608,18 +609,22 @@ class MCConn:
                 pass
 
     async def _configuration(self, info):
-        # send settings
-        sf = info.get("settings_fields") or []
-        payload = mc.varint(info.get("settings_id", 0))
-        defaults = {
-            "locale": "en_US", "viewDistance": 12, "chatFlags": 15,
-            "chatColors": True, "skinParts": 255, "mainHand": 1,
-            "enableTextFiltering": False, "enableServerListing": True,
-            "particleStatus": 0,
-        }
-        for name, ftype in sf:
-            payload += _encode_setting(name, ftype, defaults.get(name))
-        await self._send_packet(payload)
+        # settings (client_information): в 1.21+ реальная структура шире, чем
+        # наша упрощённая => Java-сервер падает "Failed to decode
+        # client_information". Reference node-клиент его НЕ шлёт — по умолчанию
+        # тоже не шлём (send_settings=True — для старых/толерантных серверов).
+        if self.send_settings:
+            sf = info.get("settings_fields") or []
+            payload = mc.varint(info.get("settings_id", 0))
+            defaults = {
+                "locale": "en_US", "viewDistance": 12, "chatFlags": 15,
+                "chatColors": True, "skinParts": 255, "mainHand": 1,
+                "enableTextFiltering": False, "enableServerListing": True,
+                "particleStatus": 0,
+            }
+            for name, ftype in sf:
+                payload += _encode_setting(name, ftype, defaults.get(name))
+            await self._send_packet(payload)
         # finish
         cfin = info.get("conf_finish", 2)
         await self._send_packet(mc.varint(cfin))
