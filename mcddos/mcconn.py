@@ -500,7 +500,8 @@ class MCConn:
             except Exception:
                 pass
             return True
-        if channel in ("velocity:pre_login",) or "pre_login" in channel:
+        # modern Velocity: "velocity:player_info" (JSON [{address,port}])
+        if channel in ("velocity:pre_login", "velocity:player_info") or "pre_login" in channel or "player_info" in channel:
             try:
                 j = json.loads(data.decode("utf-8", "replace"))
                 if isinstance(j, list) and j:
@@ -556,8 +557,11 @@ class MCConn:
                     except Exception:
                         msg_id, channel, rest = 0, "", b""
                     is_pre = self._handle_prelogin(channel, rest)
-                    # respond: 1 = success (handled), 0 = ignore/fail
-                    resp_data = mc.varint(msg_id) + mc.varint(1 if is_pre else 0)
+                    # login_plugin_response = [messageId, option<restBuffer> data].
+                    # Vanilla/node-reference: data absent (0x00) — просто messageId.
+                    # 0x01 = "data есть" => Java-сервер парсит cookie_response из
+                    # пустого буфера -> "Failed to decode cookie_response".
+                    resp_data = mc.varint(msg_id) + b"\x00"
                     await self._send_packet(mc.varint(self._login_plugin_resp) + resp_data)
                     continue
                 if pid == self._login_compress:
