@@ -567,7 +567,9 @@ class MCConn:
                 if pid == self._login_success:
                     self.state = "login_success"
                     self.player_uuid = self._parse_login_success_uuid(payload)
-                    await self._send_chat_session_update()
+                    # NB: chat_session_update (play-state packet) отправляем позже,
+                    # после входа в play-state (для 764+ login_success ещё в
+                    # login/configuration state -> invalid id -> decoder reset).
                     if self._login_ack is not None:
                         await self._send_packet(mc.varint(self._login_ack))
                     break
@@ -590,6 +592,10 @@ class MCConn:
                 self.state = "play"
             else:
                 self.state = "play"
+
+            # play-state уже: регистрируем profile key (1.19.3+) если есть
+            if self.state == "play":
+                await self._send_chat_session_update()
 
             if wait_play:
                 await self._wait_join(info)
@@ -678,11 +684,12 @@ class MCConn:
     def _sign_chat(self, text, ts_ms):
         """-> (sig_bytes, ts_ms, salt, signed). version-dependent signable."""
         pk = self.profile_key
-        if pk is None:
-            return None, ts_ms, None, False
+        # salt нужен ВСЕГДА (поле есть в чат-пакете 1.19.3+), даже без подписи
         salt = int.from_bytes(os.urandom(8), "big")
         if salt >= (1 << 63):
             salt -= (1 << 64)
+        if pk is None:
+            return None, ts_ms, salt, False
         if self.pvn >= 761:  # 1.19.3+ (useChatSessions)
             sig = pk.rsa.sign(pk.chat_signable_v193(text, ts_ms, salt), "sha256")
             return sig, ts_ms, salt, True
