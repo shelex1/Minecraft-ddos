@@ -277,7 +277,14 @@ class MCConn:
                 if p["type"] == "socks5h":
                     w.write(b"\x05\x01\x00\x03" + bytes([len(hb)]) + hb + struct.pack(">H", port))
                 else:
-                    w.write(b"\x05\x01\x00\x01" + socket_inet_aton(host) + struct.pack(">H", port))
+                    # socks5 (no DNS): resolve domain to IPv4 client-side
+                    try:
+                        ip4 = socket_inet_aton(host)
+                    except OSError:
+                        infos = await asyncio.get_running_loop().getaddrinfo(
+                            host, port, 0, socket.SOCK_STREAM)
+                        ip4 = socket_inet_aton(infos[0][4][0])
+                    w.write(b"\x05\x01\x00\x01" + ip4 + struct.pack(">H", port))
                 await w.drain()
                 resp = await asyncio.wait_for(r.read(4), self.timeout)
                 if len(resp) < 4 or resp[1] != 0:
