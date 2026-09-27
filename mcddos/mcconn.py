@@ -631,11 +631,18 @@ class MCConn:
         # read configuration until finish from server
         cend = info.get("conf_end", 2)
         cdis = info.get("conf_disconnect", 1)
+        skp_s2c = info.get("select_known_packs_s2c")
+        skp_c2s = info.get("select_known_packs_c2s")
         deadline = time.time() + self.timeout
         while time.time() < deadline:
             pid, payload = await self._read_packet()
             if pid is None:
                 return True
+            # select_known_packs s2c (1.20.4+): сервер спрашивает известные паки —
+            # отвечаем пустым списком (как node-reference: packs: [])
+            if skp_s2c is not None and pid == skp_s2c:
+                await self._send_packet(mc.varint(skp_c2s) + mc.varint(0))
+                continue
             if pid == cend:
                 await self._send_brand_register()
                 return True
