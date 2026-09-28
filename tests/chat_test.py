@@ -9,10 +9,10 @@ async def test(port, ver, n=3):
         if not ok:
             print(f"{ver}: login FAIL state={c.state} kick={c.kick_reason}")
             return
-        # chat several times
+        #  отправляем чат несколько раз
         for i in range(n):
             r = await c.chat(f"hello {ver} msg {i}")
-        # read a bit to see if kicked
+        #  читаем немного, чтобы увидеть, не кикнули ли
         try:
             pid, payload = await asyncio.wait_for(c.read_one(), 3)
             print(f"{ver}: chat ok x{n}, next pid={pid} state={c.state}")

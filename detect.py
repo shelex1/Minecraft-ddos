@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
-Minecraft server auto-detect (version + real IP + captcha/registration)
+Авто-детект Minecraft-сервера (версия + реальный IP + капча/регистрация)
 ========================================================================
-Self-contained: uses the local `mcddos` package (MCConn, protocol, proxies).
+Самодостателен: использует локальный пакет `mcddos` (MCConn, protocol, proxies).
 
-Given a host:port the script:
-  0. resolves DNS / checks TCP
-  1. AUTO-DETECTS the protocol version (status sweep, direct + via proxies)
-  2. finds the REAL backend IP (bungee/velocity prelogin during login)
-  3. detects the CAPTCHA / REGISTRATION requirement (login kick text)
+По host:port скрипт:
+  0. резолвит DNS / проверяет TCP
+  1. САМ определят протокольную версию (status sweep, напрямую и через прокси)
+  2. находит РЕАЛЬНЫЙ IP бэкенда (bungee/velocity prelogin во время login)
+  3. определяет требование КАПЧИ / РЕГИСТРАЦИИ (по тексту кика)
 
-Proxies:
-  --proxy http://ip:port           (repeatable, or comma separated)
-  --proxy-file proxies.txt         (one per line, same syntax as mcddos)
-  --fetch 300                      (download 300 free proxies from public lists)
+Прокси:
+  --proxy http://ip:port           (можно несколько, или через запятую)
+  --proxy-file proxies.txt         (по одному в строке, синтаксис как у mcddos)
+  --fetch 300                      (скачать 300 бесплатных прокси с публичных списков)
 
-Example:
+Пример:
   venv/bin/python detect.py CoreLand.go-srv.top 25565 --fetch 300 --timeout 4
 """
 import argparse
@@ -27,7 +27,7 @@ import socket
 import sys
 import time
 
-# allow running from any directory (package may be in a parent dir)
+#  позволяем запуск из любого каталога (пакет может лежать на уровень выше)
 _HERE = os.path.dirname(os.path.abspath(__file__))
 for _p in (_HERE, os.path.dirname(_HERE), os.getcwd()):
     if os.path.isdir(os.path.join(_p, "mcddos")):
@@ -37,7 +37,7 @@ from mcddos.versions import VERSIONS, guess_version_for_protocol   # noqa: E402
 from mcddos.mcconn import MCConn                                   # noqa: E402
 from mcddos.proxies import parse_proxy_line, fetch_proxies         # noqa: E402
 
-# protocols to sweep; most-likely first. Full set 735..777.
+#  протоколы для перебора; наиболее вероятные первыми. Полный набор 735..777.
 ALL_PROTOCOLS = [775, 774, 773, 772, 771, 770, 769, 768, 767, 766, 765,
                  764, 763, 762, 761, 760, 759, 758, 757, 756, 755, 754,
                  753, 751, 735]
@@ -53,7 +53,7 @@ def log(*a):
 
 
 # ---------------------------------------------------------------------------
-# probes
+#  пробы
 # ---------------------------------------------------------------------------
 async def status_probe(host, port, pvn, timeout, proxy=None):
     c = MCConn(host, port, timeout=timeout, proxy=proxy)
@@ -86,7 +86,7 @@ async def login_probe(host, port, pvn, timeout, proxy=None, name="mcddosdetect")
 
 
 # ---------------------------------------------------------------------------
-# classification
+#  классификация
 # ---------------------------------------------------------------------------
 def classify_kick(text):
     t = (text or "").lower()
@@ -112,7 +112,7 @@ def classify_kick(text):
 
 
 def version_from_text(text):
-    """Extract a MC version mentioned in a kick text -> protocol."""
+    """Достаёт версию MC из текста кика -> protocol."""
     for m in re.finditer(r"(\d{1,2}\.\d{1,2}(?:\.\d{1,2})?)", text or ""):
         v = m.group(1)
         if v in VERSIONS:
@@ -121,7 +121,7 @@ def version_from_text(text):
 
 
 # ---------------------------------------------------------------------------
-# main
+#  main (точка входа)
 # ---------------------------------------------------------------------------
 async def amain(args):
     host, port = args.host, args.port
@@ -132,7 +132,7 @@ async def amain(args):
         "captcha": None, "working_proxy": None, "notes": [],
     }
 
-    # ---- phase 0: DNS ----
+    #  ---- фаза 0: DNS ----
     log(f"\n=== [0] DNS :: {host}:{port} ===")
     try:
         infos = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
@@ -151,7 +151,7 @@ async def amain(args):
         result["dns"]["tcp"] = f"closed ({type(e).__name__})"
         log(f"  TCP {port}: closed")
 
-    # ---- build proxy source list ----
+    #  ---- собираем список источников прокси ----
     proxies = []
     seen = set()
 
@@ -189,17 +189,18 @@ async def amain(args):
         sources.append((f"proxy {p['host']}:{p['port']} ({p['type']})", p))
     log(f"\n  sources: {len(sources)} (1 direct + {len(proxies)} proxies)")
 
-    # ---- phase 1: version auto-detect (status sweep) ----
+    #  ---- фаза 1: авто-детект версии (status sweep) ----
     log(f"\n=== [1] Version auto-detect (status sweep, timeout {args.timeout}s) ===")
-    protocols = ALL_PROTOCOLS
     if args.protocols:
         protocols = [int(x) for x in args.protocols.split(",")]
+    else:
+        protocols = LIKELY
 
-    # stage A: quick sweep on LIKELY protocols for all sources
+    #  этап A: быстрый sweep по `protocols` (по умолчанию LIKELY) для всех источников
     sem = asyncio.Semaphore(args.workers)
     hit = {"r": None}
     done = 0
-    total = len(sources) * len(LIKELY)
+    total = len(sources) * len(protocols)
 
     async def try_status(src, pvn):
         nonlocal done
@@ -213,7 +214,7 @@ async def amain(args):
                 f"ver={d.get('version',{}).get('name')}")
 
     t0 = time.time()
-    await asyncio.gather(*(try_status(s, p) for s in sources for p in LIKELY))
+    await asyncio.gather(*(try_status(s, p) for s in sources for p in protocols))
     log(f"  stage A: {done} probes in {time.time()-t0:.0f}s")
 
     if hit["r"]:
@@ -232,22 +233,21 @@ async def amain(args):
             f"{d.get('players',{}).get('max')}")
         log(f"     motd: {str(d.get('description',''))[:120]}")
 
-        # stage B: precise protocol confirmation via the working proxy
-        # (status is the same for all compatible protocols; just confirm the
-        #  highest protocol the server lists as max)
+        #  этап B: точное подтверждение protocol через рабочий источник
+        #  (status одинаков для всех совместимых протоколов; лишь убедимся, что
+        #   подтверждён максимальный protocol, который сервер указывает как max)
         max_p = int(v.get("protocol", pvn))
         if max_p in ALL_PROTOCOLS and max_p != pvn:
             d2 = await status_probe(host, port, max_p, args.timeout, proxy)
             if isinstance(d2, dict):
                 result["protocol"] = max_p
                 result["version"] = d2.get("version", {}).get("name") or result["version"]
-                result["protocol"] = max_p
                 log(f"  -> confirmed exact protocol {max_p} ({result['version']})")
         result["notes"].append(f"status via {label}")
     else:
         result["notes"].append("status: no source answered (proxy buffering this IP / dead proxies)")
 
-    # ---- phase 2+3: login via working source (real IP + captcha) ----
+    #  ---- фазы 2+3: login через рабочий источник (реальный IP + капча) ----
     log("\n=== [2] Login -> real IP (prelogin) + [3] captcha/registration ===")
     login_src = None
     if hit["r"]:
@@ -255,32 +255,32 @@ async def amain(args):
     login_pvn = result["protocol"] or (hit["r"][2] if hit["r"] else 775)
 
     attempts = []
-    # primary: working source
+    #  основной: рабочий источник
     if login_src:
-        label, proxy = login_src
+        label, proxy = login_src[0], login_src[1]   # форма: hit["r"] = (label, proxy, pvn, status)
         log(f"  login via {label} pvn={login_pvn} ...")
         info = await login_probe(host, port, login_pvn, args.login_timeout, proxy, args.name)
         attempts.append((label, info))
         _apply_login(result, info, label)
         if info["ok"] or (info["kick"] and classify_kick(info["kick"]) in
                          ("captcha", "registration")):
-            pass  # enough signal
+            pass  # сигнала достаточно
         else:
-            # try one older protocol too (some proxies only pass login for old pvns)
+            #  пробуем и на протоколе старше (некоторые прокси пропускают login только для старых pvn)
             alt = 767 if login_pvn != 767 else 775
             log(f"  login via {label} pvn={alt} (fallback) ...")
             info2 = await login_probe(host, port, alt, args.login_timeout, proxy, args.name)
             attempts.append((label, info2))
             _apply_login(result, info2, label)
 
-    # secondary: direct login (server may talk to direct even if status blocked)
+    #  вторичный: прямой login (сервер может отвечать напрямую, даже если status закрыт)
     if args.direct and not (result["real_ip"] or result["captcha"]):
         log(f"  login direct pvn={login_pvn} ...")
         info = await login_probe(host, port, login_pvn, args.login_timeout, None, args.name)
         attempts.append(("direct", info))
         _apply_login(result, info, "direct")
 
-    # tertiary: login sweep via proxies (short) to catch ANY kick text
+    #  третичный: короткий login-sweep через прокси, поймать ЛЮБОЙ текст кика
     cap_score = (result.get("captcha") or {}).get("_score", 0)
     if cap_score < 2 and proxies:
         log(f"\n  login sweep via {min(len(proxies), args.max_login_proxies)} proxies ...")
@@ -305,7 +305,7 @@ async def amain(args):
             *(try_login(s, p) for s in sources[1:1 + args.max_login_proxies]
               for p in LIKELY[:3]))
         log(f"  login sweep: {done2} probes, {len(kicks)} with signal")
-        # best signal: captcha/reg > backend > any kick
+        #  лучший сигнал: капча/регистрация > бэкенд > любой кик
         order = {"captcha": 3, "registration": 2, "wrong_version": 1, "other": 0}
         kicks.sort(key=lambda x: (
             order.get(classify_kick(x[2].get("kick")) or "other", 0),
@@ -318,7 +318,7 @@ async def amain(args):
             _apply_login(result, info, label)
         result["login_sweep_signal"] = len(kicks)
 
-    # ---- finalize ----
+    #  ---- финализация ----
     log("\n=== RESULT ===")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     log("\n--- summary ---")
@@ -332,23 +332,23 @@ async def amain(args):
 
 
 def _apply_login(result, info, label):
-    """Merge login probe results into result, keeping the strongest signal."""
+    """Сливает результаты login-проб в результат, оставляя самый сильный сигнал."""
     kick = info.get("kick")
     backend = info.get("backend")
     kind = classify_kick(kick)
-    # real ip
+    #  реальный IP
     if backend and not result["real_ip"]:
         ip, rport, bkind = backend
         result["real_ip"] = ip
         result["real_ip_source"] = f"{bkind}:pre_login:{rport} via {label}"
         result["notes"].append(f"prelogin via {label}: {ip}:{rport} ({bkind})")
-    # version from kick text
+    #  версия из текста кика
     if result["version"] is None and kind == "wrong_version":
         v = version_from_text(kick)
         if v:
             result["version"], result["protocol"] = v
             result["notes"].append(f"version from kick text: {v}")
-    # captcha signal (higher = stronger)
+    #  сигнал капчи (больше = сильнее)
     if info.get("ok"):
         score = 5
     elif kind == "captcha":
@@ -358,7 +358,7 @@ def _apply_login(result, info, label):
     elif kick:
         score = 2
     else:
-        score = 1  # timeout / silent (blocked before server)
+        score = 1  # таймаут / тишина (заблокировано ещё до сервера)
     cur = (result.get("captcha") or {}).get("_score", 0)
     if score > cur:
         if info.get("ok"):

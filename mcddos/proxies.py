@@ -1,16 +1,18 @@
-"""Automatic proxy fetching, verification and pooling.
+"""
+Автозагрузка, проверка и пул прокси.
 
-Supported: http, socks4, socks5 (also socks5h), with optional user:pass.
-Sources: public free-proxy lists. The pool keeps only proxies verified
-against the user's own Minecraft server via the MC handshake+status flow.
+Поддержаны: http, socks4, socks5 (и socks5h), опционально user:pass.
+Источники: публичные списки бесплатных прокси. В пул попадают только прокси,
+проверенные на вашем собственном MC-сервере через handshake+status.
 """
 import asyncio
-import random
+import functools
 import re
+import struct
 import time
 
 try:
-    import aiohttp  # optional: only needed for fetch_proxies (public lists)
+    import aiohttp  # опционально: нужно только для fetch_proxies (публичные списки)
 except Exception:
     aiohttp = None
 
@@ -37,7 +39,7 @@ LINE_RE = re.compile(r"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d{1,5})(?:@|,|$)"
 
 
 def parse_proxy_line(line: str):
-    """Parse 'http://ip:port', 'ip:port', 'socks5://ip:port', 'user:pass@ip:port'."""
+    """Разбирает 'http://ip:port', 'ip:port', 'socks5://ip:port', 'user:pass@ip:port'."""
     line = line.strip()
     if not line:
         return None
@@ -56,7 +58,7 @@ def parse_proxy_line(line: str):
         return None
     if not (0 < int(port) < 65536):
         return None
-    # validate ip
+    #  проверка IP
     parts = host.split(".")
     if len(parts) != 4 or not all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
         return None
@@ -68,7 +70,7 @@ def parse_proxy_line(line: str):
 
 
 async def fetch_proxies(sources=None, timeout=15, max_workers=12, limit=1500):
-    """Download proxy lists and return list of parsed proxies."""
+    """Скачивает списки прокси и возвращает список разобранных прокси."""
     if aiohttp is None:
         raise RuntimeError("fetch_proxies needs `aiohttp` — run: pip install aiohttp")
     sources = sources or PROXY_SOURCES
@@ -109,7 +111,7 @@ def to_url(p: dict) -> str:
 
 
 class ProxyPool:
-    """Holds verified proxies and hands them out to workers."""
+    """Хранит проверенные прокси и раздаёт их воркерам."""
 
     def __init__(self, proxies):
         self.proxies = list(proxies)
@@ -138,8 +140,10 @@ class ProxyPool:
 
 def verify_one(p: dict, host: str, port: int, protocol: int,
                timeout: float = 8.0, status_check: bool = True):
-    """Synchronous verification of a single proxy against an MC server.
-    Returns (ok: bool, ms: float)."""
+    """
+Синхронная проверка одного прокси против MC-сервера.
+Возвращает (ok: bool, ms: float).
+    """
     import socket
     import ssl
 
@@ -208,7 +212,7 @@ def verify_one(p: dict, host: str, port: int, protocol: int,
                 if len(r) < 4 or r[1] != 0:
                     s.close()
                     return False, 0
-        # now MC handshake over the tunnel
+        #  теперь MC handshake через туннель
         from . import protocol as mc
         s.sendall(mc.handshake_packet(protocol, host, port, 1))
         s.sendall(mc.status_request_packet())
@@ -226,14 +230,18 @@ def verify_one(p: dict, host: str, port: int, protocol: int,
         return False, 0
 
 
-def verify_one_async(p, host, port, protocol, timeout=8.0):
+async def verify_one_async(p, host, port, protocol, timeout=8.0,
+                           status_check=True):
+    """Обёртка run_in_executor над блокирующей verify_one()."""
     loop = asyncio.get_running_loop()
-    return loop.run_in_executor(None, verify_one, p, host, port, protocol, timeout)
+    return await loop.run_in_executor(
+        None, functools.partial(verify_one, p, host, port, protocol, timeout,
+                                status_check))
 
 
 async def verify_proxies(proxies, host, port, protocol, max_workers=25,
                          timeout=8.0, status_check=True, on_progress=None):
-    """Verify a batch of proxies concurrently. Returns (good, bad) lists."""
+    """Проверяет пачку прокси параллельно. Возвращает списки (хорошие, плохие)."""
     good, bad = [], []
     q = asyncio.Queue()
     for p in proxies:
@@ -249,6 +257,7 @@ async def verify_proxies(proxies, host, port, protocol, max_workers=25,
                 ok, ms = await verify_one_async(p, host, port, protocol, timeout, status_check)
             except Exception:
                 ok, ms = False, 0
+            p["_ms"] = ms  # нужно для сортировки по задержке ниже
             if ok:
                 good.append(p)
             else:
@@ -264,5 +273,3 @@ async def verify_proxies(proxies, host, port, protocol, max_workers=25,
     good.sort(key=lambda x: x.get("_ms", 0))
     return good, bad
 
-
-import struct  # noqa: E402

@@ -1,25 +1,25 @@
-"""Generic Minecraft protocol field reader.
+"""
+Универсальный читатель полей протокола Minecraft.
 
-Reads / skips arbitrary packet payloads described by minecraft-data
-"type" specs. Supports every primitive and composite type used across
-1.16 -> 26.3, including switch, option, array, buffer, nbt, vec*, etc.
+Читает / пропускает любые payload'ы пакетов, описанные «type»-спеками из
+minecraft-data. Поддержаны все примитивы и составные типы, встречающиеся
+в 1.16 -> 26.3, включая switch, option, array, buffer, nbt, vec* и т.д.
 
-Type specs (from protocol.json) are either:
-  * a string  -> primitive name or a named type in the type table
-  * a list [name, params] -> composite type
+Спеки типов (из protocol.json) бывают двух видов:
+  * строка -> имя примитива или именованный тип из таблицы типов
+  * список [name, params] -> составной тип
 
-The type table maps named types (containers, mappers, switches, ...) to
-their definition. Build it with `build_type_table(protocol_dict)`.
+Таблица типов сопоставляет именованные типы (контейнеры, mapper'ы, switch'и, ...)
+с их определением. Строится через `build_type_table(protocol_dict)`.
 """
 
-import struct
 
 
 class FieldReadError(Exception):
     pass
 
 
-# --- primitive sizes / readers ---------------------------------------------
+#  --- размеры и читалки примитивов -----------------------------------------
 
 _PRIM = {
     "i8": 1, "u8": 1, "bool": 1,
@@ -86,7 +86,7 @@ class Cursor:
 
 
 def build_type_table(d):
-    """Merge global + per-state type definitions into one lookup table."""
+    """Сливает глобальные и per-state определения типов в одну таблицу поиска."""
     tdefs = {}
     if "types" in d:
         for k, v in d["types"].items():
@@ -128,7 +128,7 @@ def _read_primitive(r: Cursor, name):
 
 
 def _read_nbt(r: Cursor):
-    """Skip an NBT value (any tag type). Returns bytes consumed."""
+    """Пропустить значение NBT (тег любого типа). Возвращает число прочитанных байт."""
     tag = r.take(1)[0]
     if tag == 0x00:
         return b""
@@ -142,13 +142,13 @@ def _read_nbt(r: Cursor):
         return 8
     if tag == 0x05:  # float
         return 4
-    if tag == 0x06:  # double
+    if tag == 0x06:  # double (вещественное)
         return 8
-    if tag == 0x07:  # byte array
+    if tag == 0x07:  # массив байт
         n, r.pos = read_varint(r.data, r.pos)
         r.pos += n
         return n
-    if tag == 0x08:  # string
+    if tag == 0x08:  # строка
         n, r.pos = read_varint(r.data, r.pos)
         r.pos += n
         return n
@@ -160,7 +160,7 @@ def _read_nbt(r: Cursor):
                 r.take(1)
                 _read_nbt_payload(r, ltype)
         return 0
-    if tag == 0x0A:  # compound
+    if tag == 0x0A:  # составной (compound)
         while True:
             t = r.take(1)[0]
             if t == 0x00:
@@ -169,11 +169,11 @@ def _read_nbt(r: Cursor):
             r.pos += n
             _read_nbt_payload(r, t)
         return 0
-    if tag == 0x0C:  # int array
+    if tag == 0x0C:  # массив int
         n, r.pos = read_varint(r.data, r.pos)
         r.pos += 4 * n
         return 0
-    if tag == 0x0D:  # long array
+    if tag == 0x0D:  # массив long
         n, r.pos = read_varint(r.data, r.pos)
         r.pos += 8 * n
         return 0
@@ -237,7 +237,9 @@ def _vec_sizes(name):
 
 
 def read_field(r: Cursor, spec, tdefs, ctx=None):
-    """Read one field per spec. Returns parsed value (best effort)."""
+    """
+Прочитать одно поле по спецификации. Возвращает разобранное значение (насколько возможно).
+    """
     ctx = ctx or {}
     if isinstance(spec, str):
         return _read_named(r, spec, tdefs, ctx)
@@ -265,7 +267,7 @@ def _read_named(r, name, tdefs, ctx):
         n, size = vs
         if size:
             return r.take(n * size)
-        else:  # vec3i: 3 varints
+        else:  # vec3i: 3 varint'а
             for _ in range(n):
                 _, r.pos = read_varint(r.data, r.pos)
             return None
@@ -318,14 +320,14 @@ def _read_composite(r, name, params, tdefs, ctx):
     if name == "mapper":
         return _read_primitive(r, params.get("type", "varint"))
     if name == "switch":
-        # index may be a previously-read field name in ctx, or an int
+        #  индексом может быть ранее прочитанное имя поля из ctx либо целое число
         idx = params.get("index")
         if isinstance(idx, int):
             key = idx
         else:
             key = ctx.get(idx)
         cases = params.get("cases", {})
-        # cases keys are strings of the value
+        #  ключи cases — строки из значения
         cspec = None
         for k, v in cases.items():
             try:
@@ -342,13 +344,13 @@ def _read_composite(r, name, params, tdefs, ctx):
                 raise FieldReadError("switch no case for %r" % (key,))
         return read_field(r, cspec, tdefs, ctx)
     if name == "tags":
-        # map of varint->varint (bitfield style)
+        #  карта varint->varint (в стиле битового поля)
         n, r.pos = read_varint(r.data, r.pos)
         for _ in range(n):
             _, r.pos = read_varint(r.data, r.pos)
             _, r.pos = read_varint(r.data, r.pos)
         return None
-    # registryEntryHolder / other special: best effort varint
+    #  registryEntryHolder и прочая экзотика: читаем как varint «на глаз»
     return _read_primitive(r, "varint")
 
 

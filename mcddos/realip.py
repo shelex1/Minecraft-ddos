@@ -1,7 +1,8 @@
-"""Real IP discovery behind Velocity / BungeeCord / proxies.
+"""
+Поиск реального IP за Velocity / BungeeCord / прокси.
 
-Primary: PreLogin plugin messages (bungeecord:pre_login / velocity:pre_login).
-Fallback: subnet scan of the proxy /24 via MC status, comparing motd/version.
+Основной путь: плагин-сообщения PreLogin (bungeecord:pre_login / velocity:pre_login).
+Запасной путь: скан /24 подсети прокси через MC status со сравнением motd/version.
 """
 import asyncio
 import concurrent.futures
@@ -14,7 +15,6 @@ import struct
 import time
 
 from . import protocol as mc
-from .versions import guess_version_for_protocol
 
 
 def _read_frame(sock, timeout=6.0):
@@ -23,8 +23,9 @@ def _read_frame(sock, timeout=6.0):
 
 
 def prelogin_probe(host, port, protocol=767, timeout=6.0, username="probe"):
-    """Connect, start login, wait for PreLogin / disconnect.
-    Returns (kind, payload) where kind in {bungee, velocity, none}.
+    """
+Подключается, начинает login, ждёт PreLogin / разрыв.
+Возвращает (kind, payload), где kind в {bungee, velocity, none}.
     """
     try:
         s = socket.create_connection((host, port), timeout=timeout)
@@ -45,7 +46,7 @@ def prelogin_probe(host, port, protocol=767, timeout=6.0, username="probe"):
             except Exception:
                 break
             if pid == 0x00:
-                # PreLogin (login state 0x00 = pre_login in 1.13+; channel string)
+                # PreLogin (в login-фазе 0x00 = pre_login в 1.13+; строка канала)
                 try:
                     channel = r.read_string()
                     rest = data[r.pos:]
@@ -62,10 +63,10 @@ def prelogin_probe(host, port, protocol=767, timeout=6.0, username="probe"):
             elif pid == 0x00 and pid == 0:
                 continue
             elif pid == 0x04:
-                # login_plugin_request -> keep waiting for prelogin
+                # login_plugin_request -> продолжаем ждать prelogin
                 continue
             elif pid == 0x03:
-                # compress
+                # сжатие
                 continue
         s.close()
         return "none", b""
@@ -74,15 +75,17 @@ def prelogin_probe(host, port, protocol=767, timeout=6.0, username="probe"):
 
 
 def parse_bungee_prelogin(data: bytes):
-    """BungeeCord prelogin data: [VarInt ip (as 32-bit), VarInt port].
-    Some builds send the IP as 4 raw bytes. Handle both."""
+    """
+Данные prelogin BungeeCord: [VarInt ip (как 32-битный), VarInt port].
+Некоторые сборки шлют IP четырьмя сырыми байтами — поддерживаем оба варианта.
+    """
     out = []
     try:
         r = mc.Reader(data, 0)
         ip = r.read_varint()
         port = r.read_varint()
         if ip > 0xFFFFFFFF:
-            # maybe raw bytes variant
+            # возможно, вариант с сырыми байтами
             raw = data
             if len(raw) >= 6:
                 b0 = raw[0]
@@ -98,7 +101,7 @@ def parse_bungee_prelogin(data: bytes):
 
 
 def parse_velocity_prelogin(data: bytes):
-    """Velocity prelogin data: JSON array of {host, port, name}."""
+    """Данные prelogin Velocity: JSON-массив {host, port, name}."""
     out = []
     try:
         j = json.loads(data.decode("utf-8", "replace"))
@@ -114,8 +117,10 @@ def parse_velocity_prelogin(data: bytes):
 
 
 def status_of(host, port, protocol=767, timeout=4.0, retries=2):
-    """Quick status ping. Returns dict or None.
-    Anti-DDoS layers often close connections with 0 bytes, so retry."""
+    """
+Быстрый status-пинг. Возвращает dict или None.
+Анти-ДДОС слои часто закрывают соединение с 0 байт, поэтому повторяем.
+    """
     for _ in range(retries + 1):
         try:
             s = socket.create_connection((host, port), timeout=timeout)
@@ -142,7 +147,7 @@ def _motd_key(info):
 
 
 def _flatten_component(obj):
-    """Flatten a chat component to plain text."""
+    """Сворачивает компонент чата в простой текст."""
     if isinstance(obj, str):
         return obj
     if isinstance(obj, list):
@@ -155,19 +160,21 @@ def _flatten_component(obj):
 
 
 def _extract_version_hint(info):
-    """Extract a client-version hint from a status MOTD.
-    e.g. MOTD '[1.21.11-26.2]' -> '1.21.11'; 'Paper 1.20.4' -> '1.20.4'.
-    Frontend MOTDs usually advertise the backend version."""
+    """
+Достаёт подсказку о версии клиента из MOTD в status.
+Например, MOTD '[1.21.11-26.2]' -> '1.21.11'; 'Paper 1.20.4' -> '1.20.4'.
+MOTD фронтенда обычно сообщает версию бэкенда.
+    """
     if not info:
         return None
     d = info.get("description", "")
     text = _flatten_component(d) if not isinstance(d, str) else d
-    # prefer a version explicitly bracketed in the MOTD: '[1.21.11-26.2]'
+    # предпочитаем версию в квадратных скобках из MOTD: '[1.21.11-26.2]'
     m = re.search(r"\[\s*([0-9]{1,2}\.[0-9]{1,2}(?:\.[0-9]{1,2})?)", text)
     if m:
         return m.group(1)
-    # otherwise take the LAST bare version-like token (the first one usually
-    # belongs to the proxy version, e.g. 'Velocity 1.7.2-26.1.2')
+    # иначе берём ПОСЛЕДНИЙ «гожий» токен версии (первый обычно
+    # относится к версии прокси, напр. 'Velocity 1.7.2-26.1.2')
     ms = re.findall(r"\b([0-9]{1,2}\.[0-9]{1,2}(?:\.[0-9]{1,2})?)\b", text)
     if ms:
         return ms[-1]
@@ -176,18 +183,18 @@ def _extract_version_hint(info):
 
 
 # ---------------------------------------------------------------------------
-# SRV / same-host port discovery
+# SRV / поиск портов на том же хосте
 # ---------------------------------------------------------------------------
 
 def srv_port(host):
-    """Query SRV _minecraft._tcp.<host>. Return port or None (dig-based)."""
+    """Запрос SRV _minecraft._tcp.<host>. Возвращает порт или None (через dig)."""
     import subprocess
     try:
         out = subprocess.run(["dig", "+short", "SRV", "_minecraft._tcp." + host],
                              capture_output=True, text=True, timeout=6).stdout.strip()
         for line in out.splitlines():
             parts = line.split()
-            # format: prio weight port target
+            # формат записи: prio weight port target
             if len(parts) >= 4 and parts[2].isdigit():
                 return int(parts[2])
     except Exception:
@@ -195,19 +202,19 @@ def srv_port(host):
     return None
 
 
-# ports tried first when scanning the same host for extra MC backends
+# порты, которые пробуем первыми при скане того же хоста в поисках MC-бэкендов
 COMMON_PORTS = [25565, 25566, 25567, 25568, 25569, 25570, 25571, 25572,
                 25573, 25574, 25575, 25576, 25577, 25578, 25579, 25580,
                 25560, 25561, 25562, 25563, 25564]
 
 
 def port_candidates(front_port):
-    """Ordered unique candidate ports for a quick same-host scan."""
+    """Упорядоченные уникальные порты-кандидаты для быстрого скана того же хоста."""
     seen, out = set(), []
     for p in COMMON_PORTS:
         if p not in seen:
             seen.add(p); out.append(p)
-    for d in range(1, 7):  # neighbours of the known frontend port
+    for d in range(1, 7):  # соседи известного порта фронтенда
         for p in (front_port + d, front_port - d):
             if 1024 < p < 65536 and p not in seen:
                 seen.add(p); out.append(p)
@@ -217,7 +224,7 @@ def port_candidates(front_port):
 
 
 async def tcp_open_ports(ip, ports, timeout=1.2, workers=1000):
-    """Fast TCP-connect pre-filter: which ports even accept a connection."""
+    """Быстрый TCP-префильтр: какие порты вообще принимают соединение."""
     async def one(p):
         try:
             _, w = await asyncio.wait_for(asyncio.open_connection(ip, p), timeout)
@@ -242,11 +249,10 @@ async def tcp_open_ports(ip, ports, timeout=1.2, workers=1000):
 
 async def scan_host_ports_async(ip, front_port, protocol=767, timeout=2.0,
                                  workers=48, log=print, limit=64, wide=False):
-    """Find MC servers on ONE host; return [{port, info}].
-    Catches backends sharing the VPS with the frontend (no prelogin over the
-    wire, e.g. Velocity).
-    wide=True: fast TCP-connect scan of 1024..65535, then MC status only on
-    open ports (much faster than status-probing all 65k ports)."""
+    """
+Находит MC-серверы на ОДНОМ хосте; возвращает [{port, info}].
+Ловит бэкенды, которые сидят на том же VPS, что и фронтенд.
+    """
     try:
         ipaddress.ip_address(ip)
     except ValueError:
@@ -259,9 +265,9 @@ async def scan_host_ports_async(ip, front_port, protocol=767, timeout=2.0,
         return []
 
     if wide:
-        # full-range MC status scan. (A TCP pre-filter does NOT help here:
-        # anti-DDoS layers often ACCEPT a TCP connection on every port and
-        # only close it after the first MC packet.)
+        # полный MC status-скан диапазона. (TCP-префильтр тут НЕ помогает:
+        # анти-ДДОС слои часто ПРИНИМАЮТ TCP-соединение на всех портах и
+        # закрывают его только после первого MC-пакета.)
         open_ports = [p for p in range(1024, 65536) if p != front_port]
         log(f"[realip] full MC status scan of {len(open_ports)} ports on {ip} ...")
         t0 = time.time()
@@ -300,7 +306,7 @@ async def scan_host_ports_async(ip, front_port, protocol=767, timeout=2.0,
     for p, info in sorted(results):
         v = info.get("version", {}) or {}
         if not v.get("name") and v.get("protocol") is None:
-            continue  # not a real MC status answer
+            continue  # это не настоящий MC status-ответ
         log(f"[realip] host-port {ip}:{p} -> {v.get('name')} (proto {v.get('protocol')})")
         found.append({"port": p, "info": info})
     return found
@@ -315,11 +321,9 @@ def scan_host_ports(ip, front_port, protocol=767, timeout=2.0, workers=48,
 
 async def login_probe_async(host, port, protocol=767, timeout=10.0,
                             username="realipprobe"):
-    """One OFFLINE-mode login attempt to a candidate backend.
-    Returns {reached, kick, online_mode}:
-      online_mode=True -> server kicked 'online mode' => requires a real
-                          Mojang account => most likely THE real backend
-      reached in ('play','configuration') -> offline-mode (cracked ok).
+    """
+Одна попытка login в режиме OFFLINE на кандидатный бэкенд.
+Возвращает {reached, kick, online_mode}.
     """
     from .mcconn import MCConn
     out = {"reached": None, "kick": None, "online_mode": False, "err": None}
@@ -348,11 +352,11 @@ async def login_probe_async(host, port, protocol=767, timeout=10.0,
 async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
                               scan_subnet=True, scan_host=True, scan_wide=True,
                               workers=40, log=print):
-    """Returns list of dicts: {ip, port, via, status}."""
+    """Возвращает список dict'ов: {ip, port, via, status}."""
     found = []
     if protocol is None:
         protocol = 767
-    # resolve domain -> IP so subnet scan works (host may be a domain)
+    # резолвим домен -> IP, чтобы работал /24-скан (хост может быть доменом)
     host_ip, _ = resolve_host(host, port)
     if host_ip != host:
         log(f"[realip] {host} -> {host_ip}")
@@ -380,7 +384,7 @@ async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
         log("[realip] server answered login success directly (no proxy detected)")
         found.append({"ip": host, "port": port, "via": "direct"})
 
-    # also check if the host itself is a backend (status check)
+    # проверяем также, не является ли сам хост бэкендом (status-проверка)
     st = await loop.run_in_executor(None, status_of, host, port, protocol, timeout)
     base_key = _motd_key(st)
     base_proto = (st or {}).get("version", {}).get("protocol")
@@ -393,8 +397,8 @@ async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
             f["status"] = st
             continue
 
-    # same-host port scan: find other MC servers on the VPS (a backend behind
-    # Velocity does NOT reveal itself via prelogin over the wire)
+    # скан портов того же хоста: ищем другие MC-серверы на VPS (бэкенд за
+    # Velocity сам себя по prelogin по проводам НЕ раскрывает)
     if scan_host:
         try:
             host_ip = resolve_host(host, port)[0]
@@ -410,12 +414,12 @@ async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
         except Exception as e:
             log(f"[realip] host port-scan error: {type(e).__name__}: {e}")
 
-    # rank same-host candidates:
-    #   1) identical MOTD+version
-    #   2) status version matches the frontend MOTD version hint
-    #      (e.g. MOTD '[1.21.11-26.2]' -> candidate 'Paper 1.21.11')
-    #   3) protocol match
-    #   4) login probe: online-mode kick => real backend (needs Mojang account)
+    # ранжируем кандидатов с того же хоста:
+    # 1) совпадающие MOTD и версия
+    # 2) версия из status совпадает с версией-подсказкой в MOTD фронтенда
+    # (напр. MOTD '[1.21.11-26.2]' -> кандидат 'Paper 1.21.11')
+    # 3) совпадение protocol
+    # 4) login-проба: кик про online-mode => это настоящий бэкенд (нужен аккаунт Mojang)
     host_hits = [f for f in found if f["via"] == "same-host-portscan"]
     best = None
     if host_hits:
@@ -427,8 +431,8 @@ async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
             info = f.get("status") or {}
             score = 0
             if base_key and _motd_key(info) == base_key:
-                score += 100  # identical MOTD+version -> surely ours
-            # same online players as the frontend -> surely the same server
+                score += 100  # одинаковые MOTD и версия -> почти наверняка наш сервер
+            # те же онлайн-игроки, что у фронтенда -> почти наверняка тот же сервер
             cand_uuids = set()
             for pl in (info.get("players", {}) or {}).get("sample", []) or []:
                 if pl.get("id"):
@@ -446,8 +450,8 @@ async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
         for f in host_hits:
             f["score"] = _sim(f)
 
-        # candidates worth a login probe: version-hint matches first,
-        # then top-scored (max 6 probes)
+        # кандидаты, достойные login-пробы: сначала совпадения по версии-подсказке,
+        # затем с наибольшим скором (не больше 6 проб)
         hint_hits = [f for f in host_hits
                      if hint and hint in str((f.get("status") or {})
                                              .get("version", {}).get("name") or "")]
@@ -482,7 +486,7 @@ async def find_real_ip_async(host, port, version=None, protocol=None, timeout=8,
             f"{best['ip']}:{best['port']} (score {best['score']}, match={best.get('match')})")
 
     if scan_subnet:
-        # gather subnet candidates from prelogin results + the host /24
+        # собираем подсетевых кандидатов из prelogin-ответов + /24 хоста
         candidates = set()
         for f in found:
             try:
@@ -534,7 +538,7 @@ def find_real_ip(host, port, version=None, protocol=None, timeout=8,
 
 
 def resolve_host(host, port):
-    """Resolve hostname -> IP, keep port."""
+    """Резолвит имя хоста -> IP, порт сохраняет."""
     try:
         infos = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
         return infos[0][4][0], port

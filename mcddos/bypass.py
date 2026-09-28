@@ -18,7 +18,7 @@
        1.19.3+ (useChatSessions):
          signable = i32(1) + UUID(sender) + UUID(session) + i32(index) + i64(salt)
                    + i64(timestamp/1000) + i32(len(msg)) + pstring(msg)
-                   [+ i32(n) + buffer(acknowledgements)]   # acks: i64 ts + 64b sig
+                   [+ i32(n) + buffer(acknowledgements)]  # подписываемые данные: i64 ts + 64-байтная подпись
        1.19.2 (chainedChatWithHashing):
          H = sha256( i64(salt) + i64(ts/1000) + pstring(msg) + i8(70) [+preview]
                      [+ for prev: i8(70)+UUID(sender)+sig ] )
@@ -45,7 +45,6 @@ import base64
 import hashlib
 import math
 import os
-import struct
 import time
 import uuid as _uuid
 
@@ -85,8 +84,8 @@ MOJANG_RSA_PUBLIC_KEY_PEM = (
 
 
 # DigestInfo OID prefixes (PKCS#1 v1.5): OID хЕША (не схемы подписи).
-#   SHA-1   = 1.3.14.3.2.26            -> 2b 0e 03 02 1a
-#   SHA-256 = 2.16.840.1.101.3.4.2.1   -> 60 86 48 01 65 03 04 02 01 (NIST; Java/openssl)
+#    SHA-1   = OID 1.3.14.3.2.26        -> байты 2b 0e 03 02 1a
+#    SHA-256 = OID 2.16.840.1.101.3.4.2.1 -> 60 86 48 01 65 03 04 02 01 (NIST; Java/openssl)
 _DIGEST_INFO_PREFIX = {
     "sha1": b"\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14",
     "sha256": b"\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20",
@@ -267,7 +266,7 @@ class _RSACtx:
         """SPKI DER (SubjectPublicKeyInfo) для RSA-PUBLIC-KEY (PKCS#1) внутри."""
         p1 = self._pkcs1_der(self.n, self.e)
         alg = b"\x30\x0d\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01\x05\x00"
-        bits = b"\x00" + p1  # unused-bit-count 0
+        bits = b"\x00" + p1  # unused-bit-count = 0
         bs = b"\x03" + self._der_len(len(bits)) + bits
         inner = alg + bs
         return b"\x30" + self._der_len(len(inner)) + inner
@@ -287,7 +286,7 @@ class _RSACtx:
     def from_spki_der(cls, der):
         """Разбирает SPKI DER -> (n, e)."""
         def rd(buf, i):
-            # -> (tag, value, start_of_content, end_of_tlv)
+            #  -> (тег, значение, начало содержимого, конец TLV)
             t = buf[i]; i += 1
             l = buf[i]; i += 1
             if l & 0x80:
@@ -296,7 +295,7 @@ class _RSACtx:
             v = buf[i:i + l]
             return t, v, i, i + l
         def rdi(x, j):
-            # INTEGER -> (tag, bytes, end)
+            #  INTEGER -> (тег, байты, конец)
             tt = x[j]; j += 1
             ll = x[j]; j += 1
             if ll & 0x80:
@@ -304,17 +303,17 @@ class _RSACtx:
                 ll = int.from_bytes(x[j:j + nr], "big"); j += nr
             v = x[j:j + ll]
             return tt, v, j + ll
-        # outer SEQUENCE
+        #  внешний SEQUENCE
         t, _, c1, _ = rd(der, 0)
         assert t == 0x30
-        # AlgorithmIdentifier SEQUENCE
+        #  SEQUENCE алгоритма (AlgorithmIdentifier)
         t, _, _, e2 = rd(der, c1)
         assert t == 0x30
-        # bit string (subject public key)
+        #  bit string (открытый ключ субъекта)
         t, bs, _, _ = rd(der, e2)
         assert t == 0x03
-        p1 = bs[1:]  # drop unused-bit-count
-        # RSAPublicKey SEQUENCE
+        p1 = bs[1:]  # отбрасываем unused-bit-count
+        #  SEQUENCE публичного RSA-ключа (RSAPublicKey)
         t, inner, c4, _ = rd(p1, 0)
         assert t == 0x30
         _, n, j = rdi(inner, 0)
@@ -323,7 +322,7 @@ class _RSACtx:
 
 
 # ---------------------------------------------------------------------------
-# Profile key (1.19.3+)
+#  Профильный ключ (1.19.3+)
 # ---------------------------------------------------------------------------
 
 
@@ -382,7 +381,10 @@ class ProfileKey:
         return str(expire_ms).encode() + pem.encode()
 
     def chat_signable_v193(self, msg: str, ts_ms: int, salt: int, acks=b""):
-        """1.19.3+: i32(1)+senderUUID+sessionUUID+i32(index)+i64(salt)+i64(ts/1000)+i32(len)+pstring(msg)[+acks]"""
+        """Формула подписываемых данных для 1.19.3+:
+        i32(1) + senderUUID + sessionUUID + i32(index) + i64(salt)
+        + i64(ts/1000) + i32(len) + pstring(msg) [+ acks]
+        """
         mb = msg.encode("utf-8")
         idx = self._index
         self._index += 1
@@ -459,7 +461,7 @@ def offline_uuid_str(name: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Plugin channels: brand / register / geyser
+#  Плагин-каналы: brand / register / geyser
 # ---------------------------------------------------------------------------
 
 BRAND_CHANNEL = "minecraft:brand"

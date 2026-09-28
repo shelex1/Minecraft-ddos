@@ -16,7 +16,7 @@ async def main():
             ok = await asyncio.wait_for(c.login(ver, wait_play=True), timeout=12)
             print(f"{ver} -> login={ok} state={c.state} kick={c.kick_reason}")
             if ok:
-                # test chat
+                #  проверяем чат
                 await c.chat('hello from mcddos')
                 await asyncio.sleep(0.3)
         except asyncio.TimeoutError:

@@ -1,11 +1,12 @@
-"""MCDDOS — Minecraft Java DDoS toolkit (1.16 -> 26.3).
+"""
+MCDDOS — набор инструментов для DDoS/нагрузки Minecraft Java (1.16 -> 26.3).
 
-Features:
-  * Bypass Velocity / BungeeCord + common anti-bot
-  * Real-IP discovery behind proxies
-  * Auto proxy pool (fetch -> verify -> reuse)
-  * Bot & no-bot load (ping / tcp / login / bot / mixed)
-  * Bots chat & keepalive
+Возможности:
+  * обход Velocity / BungeeCord и частых анти-ботов
+  * поиск реального IP за прокси
+  * авто-пул прокси (fetch -> verify -> reuse)
+  * нагрузка с ботами и без (ping / tcp / login / bot / mixed)
+  * боты пишут в чат и держат keepalive
 """
 __version__ = "1.0.0"
 

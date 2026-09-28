@@ -16,7 +16,7 @@ async def main():
             print(f"via-proxy status {ver} ERR {type(e).__name__}: {e}")
         finally:
             await c.close()
-        # login through proxy
+        #  login через прокси
         c = MCConn('127.0.0.1', port, proxy=pr, username='ptest')
         try:
             ok = await asyncio.wait_for(c.login(ver, wait_play=False), 10)

@@ -1,8 +1,9 @@
-"""Pure-Python Ed25519 (RFC 8032) — keygen + sign + verify.
+"""
+Ed25519 на чистом Python (RFC 8032) — генерация + подпись + проверка.
 
-Used for signed-chat sessions (Minecraft 1.19.3+). No external deps.
-Uses affine twisted-Edwards formulas (verified against RFC 8032 vectors).
-Performance is fine: chat signing happens once per bot join, not per packet.
+Нужен для сессий подписанного чата (Minecraft 1.19.3+). Внешних зависимостей нет.
+Использованы аффинные формулы twisted-Edwards (сверено с векторами RFC 8032).
+Быстроты достаточно: чат подписывается один раз на вход бота, а не на каждый пакет.
 """
 import hashlib
 
@@ -30,7 +31,7 @@ def _recover_x(y, sign):
 
 _By = 4 * _inv(5) % _p
 _Bx = _recover_x(_By, 0)
-_B = (_Bx, _By)  # affine (x, y)
+_B = (_Bx, _By)  # аффинные координаты (x, y)
 
 
 def _add(P, Q):

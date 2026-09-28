@@ -1,4 +1,4 @@
-"""Protocol versions for Minecraft Java 1.16 -> 26.3 (releases)."""
+"""Протокольные версии Minecraft Java 1.16 -> 26.3 (релизы)."""
 
 VERSIONS = {
     "1.16": 735, "1.16.1": 736, "1.16.2": 751, "1.16.3": 753, "1.16.4": 754,
@@ -31,7 +31,7 @@ def protocol_of(version: str) -> int:
 
 
 def guess_version_for_protocol(pvn: int):
-    """Best release name for a protocol number."""
+    """Наиболее подходящее имя релиза для номера протокола."""
     best = None
     for name, p in VERSIONS.items():
         if p == pvn:

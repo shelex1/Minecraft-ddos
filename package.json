@@ -1,0 +1,28 @@
+{
+  "name": "minecraft-ddos",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">   <img src=\"https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white\" alt=\"Python 3.8+\" />   <img src=\"https://img.shields.io/badge/Зависимости-0%20внешних-green\" alt=\"0 внешних зависимостей\" />   <img src=\"https://img.shields.io/badge/Версии-1.16%20→%2026.3-6CABFF\" alt=\"1.16 -> 26.3\" />   <img src=\"https://img.shields.io/badge/Статус-сырая%20наработка-orange\" alt=\"сырая наработка\" />   <img src=\"https://img.shields.io/badge/License-MIT-blue\" alt=\"MIT\" /> </p>",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shelex1/Minecraft-ddos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/shelex1/Minecraft-ddos/issues"
+  },
+  "homepage": "https://github.com/shelex1/Minecraft-ddos#readme",
+  "dependencies": {
+    "minecraft-protocol": "^1.68.0"
+  }
+}

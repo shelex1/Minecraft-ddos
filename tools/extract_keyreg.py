@@ -1,5 +1,7 @@
+import os
 import json, os
-SRC = '/home/agent/work/mcddos/node_modules/minecraft-data/minecraft-data/data/pc'
+SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                'node_modules', 'minecraft-data', 'minecraft-data', 'data', 'pc')
 
 # For each release 759..777 find:
 #  - play-state packet names containing 'session' or 'Session' (key registration)

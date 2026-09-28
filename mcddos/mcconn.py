@@ -1,26 +1,28 @@
-"""Async Minecraft connection core: handshake -> status -> login -> play.
+"""
+Асинхронное ядро соединения Minecraft: handshake -> status -> login -> play.
 
-Handles per-version packet IDs (from data/packets.json), compression
-thresholds, and bundled messages (1.20.2+). Works against vanilla,
-Velocity and BungeeCord backends. Offline (cracked) mode by default.
+Учитывает id пакетов под каждую версию (из data/packets.json), порог
+сжатия и бандлы (1.20.2+). Работает против vanilla, Velocity и бэкендов
+BungeeCord. По умолчанию — offline (cracked) режим.
 """
 import asyncio
 import json
 import os
+import socket
 import struct
 import time
 import zlib
 
 from . import protocol as mc
 from . import bypass
-from .fields import Cursor, build_type_table, read_varint, FieldReadError
-from .versions import protocol_of, guess_version_for_protocol
+from .fields import read_varint
+from .versions import protocol_of
 
 _DATA = os.path.join(os.path.dirname(__file__), "data", "packets.json")
 with open(_DATA) as _f:
     _PKTS = json.load(_f)
 
-# optional full protocol.json for generic field parsing (login_start fields etc.)
+# опциональный полный protocol.json для универсального разбора полей (login_start и т.п.)
 _FULL = {}
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -30,7 +32,7 @@ def pkt_info(pvn):
 
 
 def _kick_cleanness(s):
-    """Fraction of printable ASCII chars (0x20-0x7e)."""
+    """Доля печатных ASCII-символов (0x20-0x7e) в строке."""
     if not s:
         return 0.0
     ok = sum(1 for ch in s if 0x20 <= ord(ch) <= 0x7e)
@@ -52,10 +54,10 @@ def _longest_printable(data):
 
 
 def _extract_kick(payload, pvn):
-    """Extract human kick text (legacy string / JSON / NBT chat component)."""
+    """Достаёт человекочитаемый текст кика (legacy-строка / JSON / NBT-компонент чата)."""
     if not payload:
         return None
-    # A) JSON string component (pre-1.20.2): cleanest
+    # A) JSON-компонент строки (до 1.20.2): самый чистый случай
     try:
         j = json.loads(payload.decode("utf-8", "replace"))
         if isinstance(j, dict):
@@ -70,7 +72,7 @@ def _extract_kick(payload, pvn):
             return j
     except Exception:
         pass
-    # B) legacy plain string (1.16-1.19.3): only if clean printable
+    # B) legacy-plain строка (1.16-1.19.3): только если это чистый печатный текст
     try:
         r = mc.Reader(payload, pvn)
         s = r.read_string()
@@ -78,7 +80,7 @@ def _extract_kick(payload, pvn):
             return s
     except Exception:
         pass
-    # C) NBT chat component (1.20.2+): longest printable run (>=8 chars)
+    # C) NBT-компонент чата (1.20.2+): берём самую длинную печатную последовательность (>=8 символов)
     best = _longest_printable(payload)
     if len(best) >= 8:
         return best.lstrip('+-: ') or None
@@ -86,7 +88,7 @@ def _extract_kick(payload, pvn):
 
 
 def _chat_component_to_text(obj):
-    """Flatten a chat component (dict/list/str) to plain text."""
+    """Сворачивает компонент чата (dict/list/str) в простой текст."""
     if obj is None:
         return ""
     if isinstance(obj, str):
@@ -105,19 +107,20 @@ def _chat_component_to_text(obj):
 
 
 def extract_chat_text(payload, pvn):
-    """Extract readable text from a chat/system_chat payload.
+    """
+Достаёт читаемый текст из payload'а chat/system_chat.
 
-    Handles:
-      * <=1.18  chat:           {message: <JSON string>, ...}
-      * 1.19    system_chat:    {content: <JSON string>, type: varint}
-      * 1.19.4+ system_chat:    {content: <NBT component>, isActionBar: bool}
-    Returns (text, is_action_bar).
+Поддерживаются:
+  * <=1.18   chat:         {message: <JSON-строка>, ...}
+  * 1.19     system_chat:  {content: <JSON-строка>, type: varint}
+  * 1.19.4+  system_chat:  {content: <NBT-компонент>, isActionBar: bool}
+Возвращает (текст, is_action_bar).
     """
     if not payload:
         return None, False
     text = None
     action_bar = False
-    # 1) read the leading string (JSON or plain) — legacy + 1.19/1.19.3
+    # 1) читаем ведущую строку (JSON или plain) — legacy + 1.19/1.19.3
     try:
         r = mc.Reader(payload, pvn)
         s = r.read_string()
@@ -131,7 +134,7 @@ def extract_chat_text(payload, pvn):
                 text = s
     except Exception:
         pass
-    # 2) NBT chat component (1.19.4+): longest printable run
+    # 2) NBT-компонент чата (1.19.4+): самая длинная печатная последовательность
     if not text:
         best = _longest_printable(payload)
         if len(best) >= 2:
@@ -148,8 +151,8 @@ class MCConn:
 
     Usage:
         c = MCConn(host, port)
-        await c.status()          # quick ping (no login)
-        await c.login(version)    # full login to play state
+        await c.status()  # быстрый ping (без login)
+        await c.login(version)  # полный login до play-состояния
         await c.chat("hello")
         await c.close()
     """
@@ -161,34 +164,35 @@ class MCConn:
         self.host = host
         self.port = port
         self.timeout = timeout
-        self.proxy = proxy  # dict from proxies.parse_proxy_line or None
+        self.proxy = proxy  # dict из proxies.parse_proxy_line или None
         self.username = username
         self.online = online
         self.seed = seed or os.urandom(32)
         self.log = log or (lambda *a: None)
-        self.profile_key = profile_key  # bypass.ProfileKey (signed chat / profile key)
+        self.profile_key = profile_key  # bypass.ProfileKey (подписанный чат / профильный ключ)
         self.send_brand = send_brand
         self.send_register = send_register
         self.send_settings = send_settings
-        self.offline_uuid = offline_uuid  # True/None=auto offline, False=zero
+        self.offline_uuid = offline_uuid  # True/None = авто offline-uuid, False = нулевой
         self.pvn = None
         self.protocol = None
-        self.state = "none"  # none/status/login/configuration/play
+        self.state = "none"  # состояния: none/status/login/configuration/play
         self.compression = None
         self.kick_reason = None
-        self.player_uuid = None  # bytes(16) from login_success
-        self.real_backend = None  # (ip, port, kind) from prelogin
+        self.player_uuid = None  # bytes(16) из login_success
+        self.real_backend = None  # (ip, port, kind) из prelogin
         self._reader = None
         self._writer = None
         self._closed = False
         self._zlib = zlib.decompressobj()
-        self._bundle_buf = []  # queued bundled sub-packets
+        self._bundle_buf = []  # очередь подпакетов бандла
         self._join_game = None
         self._keepalive_counter = 0
         self._chat_session_sent = False
-        self._last_chain_sig = None  # 1.19.2 chained chat
+        self._last_chain_sig = None  # цепочечный чат 1.19.2
+        self._play_seen = False  # пакет из play уже получен
 
-    # ---- bypass helpers ---------------------------------------------------
+    # ---- хелперы обхода (bypass) ------------------------------------------
     def _offline_uuid(self):
         if self.offline_uuid or (self.offline_uuid is None and not self.online):
             return bypass.offline_uuid_bytes(self.username)
@@ -211,7 +215,7 @@ class MCConn:
             except Exception:
                 pass
 
-    # ---- low level io -----------------------------------------------------
+    # ---- низкоуровневый ввод-вывод ----------------------------------------
     async def _open(self):
         if self.proxy:
             s = await self._open_proxy()
@@ -219,11 +223,10 @@ class MCConn:
         else:
             self._reader, self._writer = await asyncio.wait_for(
                 asyncio.open_connection(self.host, self.port), self.timeout)
-        import socket as _s
         sock = self._writer.get_extra_info("socket")
         if sock:
             try:
-                sock.setsockopt(_s.IPPROTO_TCP, _s.TCP_NODELAY, 1)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             except Exception:
                 pass
         self.state = "connected"
@@ -259,7 +262,7 @@ class MCConn:
                 resp = await asyncio.wait_for(r.read(8), self.timeout)
                 if len(resp) < 4 or resp[1] != 0:
                     raise MCConnError("socks4 failed")
-            else:  # socks5 / socks5h
+            else:  # socks5 / socks5h (DNS через прокси)
                 w.write(b"\x05\x01\x00")
                 await w.drain()
                 resp = await asyncio.wait_for(r.read(2), self.timeout)
@@ -277,7 +280,7 @@ class MCConn:
                 if p["type"] == "socks5h":
                     w.write(b"\x05\x01\x00\x03" + bytes([len(hb)]) + hb + struct.pack(">H", port))
                 else:
-                    # socks5 (no DNS): resolve domain to IPv4 client-side
+                    # socks5 (без DNS): резолвим домен в IPv4 на стороне клиента
                     try:
                         ip4 = socket_inet_aton(host)
                     except OSError:
@@ -298,11 +301,12 @@ class MCConn:
         await self._writer.drain()
 
     async def _send_packet(self, payload: bytes):
-        """Send one framed packet (with compression if active).
+        """
+Отправляет один кадр пакета (со сжатием, если оно включено).
 
-        Compression format: frame = [varint len][inner];
-        inner = [varint uncompressedLen][raw-or-deflated].
-        uncompressedLen == 0 means raw bytes follow.
+Формат сжатия: кадр = [varint len][внутренняя часть];
+внутренняя часть = [varint uncompressedLen][сырые данные или deflate].
+uncompressedLen == 0 означает, что дальше идут несжатые байты.
         """
         if self.compression is not None:
             if self.compression > 0 and len(payload) >= self.compression:
@@ -341,7 +345,7 @@ class MCConn:
         return buf
 
     async def _read_frame(self):
-        """Read one framed packet, return inner payload (bytes, no packet id split)."""
+        """Читать один кадр пакета, вернуть полезную нагрузку (bytes, без выделения id)."""
         length = await self._read_varint_raw()
         if length <= 0:
             return b""
@@ -355,30 +359,31 @@ class MCConn:
         return data
 
     async def _read_packet(self):
-        """Read one logical packet. Handles bundled messages (1.20.2+).
-        Returns (packet_id, payload_after_id)."""
-        # consume any queued bundled sub-packets first
+        """
+Читать один логический пакет. Обрабатывает бандлы (1.20.2+).
+Возвращает (id пакета, полезная нагрузка после id).
+        """
+        # сначала выгребаем подпакеты бандла, которые уже в очереди
         if self._bundle_buf:
             sid, payload = self._bundle_buf.pop(0)
-            # note: pstart is into the ORIGINAL frame data; but we only kept ids.
-            # store payload slices instead.
+            # замечание: pstart — индекс в ИСХОДНЫХ данных кадра, а мы сохранили только id,
+            # поэтому храним срезы полезной нагрузки вместо id.
             return sid, payload
         data = await self._read_frame()
         if not data:
             return None, b""
-        # packet id
+        # id пакета
         pid, pos = read_varint(data, 0)
-        # bundle delimiter? (1.20.2+ id 0)
+        # разделитель бандла? (1.20.2+ id 0)
         if pid == 0 and self.pvn is not None and pkt_info(self.pvn).get("bundle") == 0:
-            # bundle: series of [varint subLen][varint subId][payload]
+            # бандл: последовательность [varint subLen][varint subId][payload]
             cur = pos
             first = True
             first_sid = None
             first_payload = None
             while cur < len(data):
-                slen, id_start = read_varint(data, cur)  # subLen (covers id+payload)
+                slen, id_start = read_varint(data, cur)  # subLen (покрывает id + полезную нагрузку)
                 sid, pstart = read_varint(data, id_start)
-                idlen = pstart - id_start
                 payload_end = id_start + slen
                 payload = data[pstart:payload_end]
                 if first:
@@ -391,9 +396,9 @@ class MCConn:
             return first_sid, first_payload
         return pid, data[pos:]
 
-    # ---- protocol phases --------------------------------------------------
+    # ---- фазы протокола ---------------------------------------------------
     async def status(self, pvn=None):
-        """Quick status ping. Returns status dict or None. Sets self.pvn."""
+        """Быстрый status-пинг. Возвращает dict статуса или None. Записывает self.pvn."""
         if pvn is None:
             pvn = 767
         pvn = protocol_of(pvn) if not isinstance(pvn, int) else pvn
@@ -440,7 +445,7 @@ class MCConn:
                                 + mc.varint(len(der)) + der
                                 + mc.varint(len(sig)) + sig)
                 else:
-                    payload += b"\x00"  # option absent
+                    payload += b"\x00"  # option отсутствует
             elif name == "playerUUID":
                 is_opt = isinstance(ftype, list) and ftype[0] == "option"
                 if is_opt:
@@ -448,9 +453,9 @@ class MCConn:
                     if self.offline_uuid or (self.offline_uuid is None and not self.online):
                         payload += b"\x01" + self._offline_uuid()
                     else:
-                        payload += b"\x00"  # absent
+                        payload += b"\x00"  # отсутствует
                 else:
-                    # 1.20.2+: required UUID
+                    # 1.20.2+: UUID обязателен
                     payload += self._offline_uuid()
         return payload
 
@@ -496,7 +501,7 @@ class MCConn:
             pass
 
     def _handle_prelogin(self, channel, data):
-        """Parse bungee/velocity prelogin to find backend."""
+        """Разбирает prelogin от bungee/velocity, чтобы найти бэкенд."""
         if channel == "bungeecord:pre_login":
             try:
                 r = mc.Reader(data, 0)
@@ -507,7 +512,7 @@ class MCConn:
             except Exception:
                 pass
             return True
-        # modern Velocity: "velocity:player_info" (JSON [{address,port}])
+        # современный Velocity: "velocity:player_info" (JSON [{address,port}])
         if channel in ("velocity:pre_login", "velocity:player_info") or "pre_login" in channel or "player_info" in channel:
             try:
                 j = json.loads(data.decode("utf-8", "replace"))
@@ -523,8 +528,10 @@ class MCConn:
         return False
 
     async def login(self, version, wait_play=True, timeout=None):
-        """Full login. version like '1.19', '1.20.4' or protocol int.
-        Reaches play state (or configuration for 1.20+). Returns True on success."""
+        """
+Полный login. version — строка вида '1.19', '1.20.4' или число protocol.
+Доводит до play-состояния (либо до configuration для 1.20+). Возвращает True при успехе.
+        """
         self.pvn = protocol_of(version) if not isinstance(version, int) else version
         if timeout:
             self.timeout = timeout
@@ -546,7 +553,7 @@ class MCConn:
             # handshake -> login
             hs = mc.handshake_payload(self.pvn, self.host, self.port, 2)
             await self._send_raw(mc.varint(len(hs) + 1) + mc.varint(0) + hs)
-            # login_start
+            # пакет login_start
             await self._send_packet(self._login_start_payload())
 
             self.state = "login"
@@ -554,7 +561,7 @@ class MCConn:
             while time.time() < deadline:
                 pid, payload = await self._read_packet()
                 if pid is None:
-                    return True  # clean close after success
+                    return True  # аккуратное закрытие после успеха
                 if pid == self._login_plugin_req:
                     r = mc.Reader(payload, self.pvn)
                     try:
@@ -563,7 +570,7 @@ class MCConn:
                         rest = payload[r.pos:]
                     except Exception:
                         msg_id, channel, rest = 0, "", b""
-                    is_pre = self._handle_prelogin(channel, rest)
+                    self._handle_prelogin(channel, rest)
                     # login_plugin_response = [messageId, option<restBuffer> data].
                     # Vanilla/node-reference: data absent (0x00) — просто messageId.
                     # 0x01 = "data есть" => Java-сервер парсит cookie_response из
@@ -581,7 +588,7 @@ class MCConn:
                     self.player_uuid = self._parse_login_success_uuid(payload)
                     # NB: chat_session_update (play-state packet) отправляем позже,
                     # после входа в play-state (для 764+ login_success ещё в
-                    # login/configuration state -> invalid id -> decoder reset).
+                    # login/configuration-состояние -> invalid id -> сброс декодера).
                     if self._login_ack is not None:
                         await self._send_packet(mc.varint(self._login_ack))
                     break
@@ -593,7 +600,7 @@ class MCConn:
                         self.kick_reason = "online mode (no auth)"
                         return False
                     continue
-                # ignore others
+                # остальные игнорируем
             else:
                 return False
 
@@ -609,7 +616,7 @@ class MCConn:
             if self.state == "play":
                 await self._send_chat_session_update()
 
-            if wait_play:
+            if wait_play and not self._play_seen:
                 await self._wait_join(info)
             return True
         except MCConnError as e:
@@ -636,10 +643,10 @@ class MCConn:
             for name, ftype in sf:
                 payload += _encode_setting(name, ftype, defaults.get(name))
             await self._send_packet(payload)
-        # finish
+        # finish (конец конфигурации)
         cfin = info.get("conf_finish", 2)
         await self._send_packet(mc.varint(cfin))
-        # read configuration until finish from server
+        # читаем configuration, пока сервер не пришлёт finish
         cend = info.get("conf_end", 2)
         cdis = info.get("conf_disconnect", 1)
         skp_s2c = info.get("select_known_packs_s2c")
@@ -657,18 +664,20 @@ class MCConn:
             if pid == cend:
                 await self._send_brand_register()
                 return True
-            # play-state packet: server already entered play (some servers
-            # skip sending conf_end after the client already finished)
+            # пакет из play: сервер уже перешёл в play (некоторые серверы
+            # не присылают conf_end, если клиент уже закончил конфигурацию)
             if pid == self._keep_alive_s2c:
                 try:
                     v = mc.Reader(payload, self.pvn).read_i64()
                     await self._send_packet(mc.varint(self._keep_alive_c2s) + mc.i64(v))
                 except Exception:
                     pass
+                self._play_seen = True
                 return True
             if pid == info.get("join_game"):
-                # server jumped straight into play (skipped conf_end)
+                # сервер прыгнул сразу в play (пропустил conf_end)
                 self._join_game = payload
+                self._play_seen = True
                 return True
             if pid == self._play_disconnect:
                 self.kick_reason = _extract_kick(payload, self.pvn) or "config kick"
@@ -679,9 +688,9 @@ class MCConn:
         return False
 
     async def _wait_join(self, info):
-        # Wait for join_game (or any play-state packet such as keep_alive,
-        # since vanilla servers may not always be paired with an app that
-        # sends SpawnInfo). keep_alive only arrives in the play state.
+        # Ждём join_game (или любой пакет из play-состояния, например keep_alive:
+        # ванильные серверы не всегда работают с приложением, которое
+        # шлёт SpawnInfo). keep_alive приходит только в play-состоянии.
         deadline = time.time() + self.timeout
         while time.time() < deadline:
             pid, payload = await self._read_packet()
@@ -691,8 +700,8 @@ class MCConn:
                 self._join_game = payload
                 return
             if pid == self._keep_alive_s2c:
-                # play state confirmed; echo keepalive and treat as joined
-                self._join_game = self._join_game  # keep None if not seen
+                # play-состояние подтверждено: отвечаем на keepalive и считаем, что зашли
+                self._play_seen = True
                 try:
                     v = mc.Reader(payload, self.pvn).read_i64()
                     await self._send_packet(mc.varint(self._keep_alive_c2s) + mc.i64(v))
@@ -703,9 +712,9 @@ class MCConn:
                 self.kick_reason = _extract_kick(payload, self.pvn) or "kicked"
                 return
 
-    # ---- play state -------------------------------------------------------
+    # ---- play-состояние ---------------------------------------------------
     def _sign_chat(self, text, ts_ms):
-        """-> (sig_bytes, ts_ms, salt, signed). version-dependent signable."""
+        """-> (подпись, ts_мс, salt, signed); подписываемые данные зависят от версии."""
         pk = self.profile_key
         # salt нужен ВСЕГДА (поле есть в чат-пакете 1.19.3+), даже без подписи
         salt = int.from_bytes(os.urandom(8), "big")
@@ -713,10 +722,10 @@ class MCConn:
             salt -= (1 << 64)
         if pk is None:
             return None, ts_ms, salt, False
-        if self.pvn >= 761:  # 1.19.3+ (useChatSessions)
+        if self.pvn >= 761:  # сессии чата 1.19.3+ (useChatSessions)
             sig = pk.rsa.sign(pk.chat_signable_v193(text, ts_ms, salt), "sha256")
             return sig, ts_ms, salt, True
-        if self.pvn == 760:  # 1.19.2 chained
+        if self.pvn == 760:  # 1.19.2 цепочечный
             sig, ts_ms, salt = pk.sign_chat_192(text, ts_ms, salt, prev=None)
             self._last_chain_sig = sig
             return sig, ts_ms, salt, True
@@ -766,7 +775,7 @@ class MCConn:
         return True
 
     async def keepalive(self, value=0):
-        # keep_alive id is i64 (8 bytes) in all supported versions
+        # id в keep_alive = i64 (8 байт) во всех поддерживаемых версиях
         info = pkt_info(self.pvn)
         cid = info.get("keep_alive_c2s")
         if cid is None:
@@ -775,7 +784,7 @@ class MCConn:
         return True
 
     async def pong(self, value=0):
-        # ping/pong id is i32
+        # id в ping/pong = i32
         info = pkt_info(self.pvn)
         cid = info.get("pong_c2s")
         if cid is None:
@@ -787,23 +796,25 @@ class MCConn:
         return await self._read_packet()
 
 
-    # ---- command / chat recon ---------------------------------------------
+    # ---- разведка команд / чата -------------------------------------------
     async def send_command(self, cmd):
-        """Send a command to the server via the chat packet.
+        """
+Отправляет команду на сервер через пакет чата.
 
-        Accepts '/version' or 'version' (adds the leading slash if missing).
-        Returns True if the packet was sent.
+Принимает '/version' или 'version' (слэш в начале добавляется сам).
+Возвращает True, если пакет отправлен.
         """
         if not cmd.startswith("/"):
             cmd = "/" + cmd
         return await self.chat(cmd)
 
     async def tab_complete(self, text, timeout=None):
-        """Send a tab-complete request and wait for the response.
+        """
+Отправляет запрос tab-complete и ждёт ответ.
 
-        Returns list of completion strings (may be empty).
-        Works on all supported versions (tab_complete <=1.19.2,
-        chat_suggestions >=1.19.3).
+Возвращает список вариантов дополнения (может быть пустым).
+Работает на всех поддерживаемых версиях (tab_complete <=1.19.2,
+chat_suggestions >=1.19.3).
         """
         info = pkt_info(self.pvn)
         req_id = info.get("tab_c2s")
@@ -825,7 +836,7 @@ class MCConn:
                 break
             if pid is None:
                 break
-            # echo keepalives / pings to stay alive
+            # отвечаем на keepalive / ping, чтобы не отваливаться
             if pid == info.get("keep_alive_s2c"):
                 try:
                     v = mc.Reader(payload, self.pvn).read_i64()
@@ -851,10 +862,11 @@ class MCConn:
         return matches
 
     async def collect_chat(self, seconds=3.0, echo_keepalive=True):
-        """Read packets for `seconds`, returning all chat texts seen.
+        """
+Читает пакеты в течение `seconds`, возвращая весь увиденный текст чата.
 
-        Keeps the connection alive (echoes keepalive/ping) and tolerates
-        non-chat packets. Returns a list of (text, is_action_bar) tuples.
+Держит соединение живым (отвечает на keepalive/ping) и терпит пакеты
+не-чат. Возвращает список кортежей (текст, is_action_bar).
         """
         info = pkt_info(self.pvn)
         chat_id = info.get("chat_s2c")
@@ -889,22 +901,21 @@ class MCConn:
 
 
 def socket_inet_aton(host):
-    import socket
     return socket.inet_aton(host)
 
 
 def _parse_tab_complete(payload):
-    """Parse tab_complete s2c (<=1.19.2): {txn, start, length, matches:[{match,tooltip}]}."""
+    """Разбирает tab_complete (s2c, <=1.19.2): {txn, start, length, matches:[{match,tooltip}]}."""
     out = []
     try:
         r = mc.Reader(payload, 0)
-        r.read_varint()  # transactionId
+        r.read_varint()  # transactionId (id транзакции)
         r.read_varint()  # start
-        r.read_varint()  # length
+        r.read_varint()  # длина
         n = r.read_varint()
         for _ in range(n):
             m = r.read_string()
-            # optional tooltip: varint present(0/1)
+            # необходимый tooltip: varint presence (0/1)
             try:
                 pres = r.read_varint()
                 if pres:
@@ -918,11 +929,11 @@ def _parse_tab_complete(payload):
 
 
 def _parse_chat_suggestions(payload):
-    """Parse chat_suggestions s2c (>=1.19.3): {action:varint, entries:[string]}."""
+    """Разбирает chat_suggestions (s2c, >=1.19.3): {action:varint, entries:[string]}."""
     out = []
     try:
         r = mc.Reader(payload, 0)
-        r.read_varint()  # action
+        r.read_varint()  # действие
         n = r.read_varint()
         for _ in range(n):
             out.append(r.read_string())
@@ -932,7 +943,7 @@ def _parse_chat_suggestions(payload):
 
 
 def _encode_setting(name, ftype, value):
-    """Encode a settings field per its declared type."""
+    """Кодирует поле настроек согласно объявленному типу."""
     if ftype == "string":
         return mc.str_field(value)
     if ftype == "i8":

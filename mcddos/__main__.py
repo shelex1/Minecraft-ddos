@@ -1,4 +1,4 @@
-"""mcddos entrypoint."""
+"""Точка входа mcddos (python -m mcddos)."""
 import sys
 
 from .cli import main_sync

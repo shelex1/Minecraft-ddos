@@ -1,4 +1,4 @@
-"""Minecraft Java Edition network protocol primitives (1.16 -> 26.3)."""
+"""Примитивы сетевого протокола Minecraft Java Edition (1.16 -> 26.3)."""
 import json
 import socket
 import struct
@@ -9,14 +9,16 @@ class MCReadError(Exception):
 
 
 class Reader:
-    """Reader for MC packet payloads (post-framing). Handles bundled
-    messages (1.20.2+ / 764+) transparently."""
+    """
+Reader полезной нагрузки MC-пакетов (после разкадровки).
+Прозрачно обрабатывает бандлы (1.20.2+ / 764+).
+    """
 
     def __init__(self, data: bytes, protocol: int):
         self.data = data
         self.pos = 0
         self.protocol = protocol
-        self.bundles = []  # list of bytes payloads for bundled packets
+        self.bundles = []  # список payload'ов (bytes) для пакетов внутри бандла
 
     def read_varint(self) -> int:
         result = 0
@@ -117,13 +119,14 @@ def uuid_field(b: bytes) -> bytes:
 
 
 def encode_field(ftype, value, tdefs=None):
-    """Encode a single protocol field.
+    """
+Кодирует одно поле протокола.
 
-    ftype: 'string'|'varint'|'i64'|'i32'|'u8'|'i8'|'bool'|'UUID'|
-           ['option', inner] | ['buffer', {countType|count}] |
-           ['mapper', {...}] | ['array', {countType, type}] |
-           'previousMessages' | ... (named via tdefs)
-    value: Python value matching the field.
+ftype: 'string'|'varint'|'i64'|'i32'|'u8'|'i8'|'bool'|'UUID'|
+       ['option', внутренний] | ['buffer', {countType|count}] |
+       ['mapper', {...}] | ['array', {countType, type}] |
+       'previousMessages' | ... (именованные типы через tdefs)
+value: значение Python, соответствующее полю.
     """
     if ftype == "string":
         return str_field(value)
@@ -142,8 +145,8 @@ def encode_field(ftype, value, tdefs=None):
     if ftype == "UUID":
         return uuid_field(value)
     if ftype == "previousMessages":
-        # array of {messageSender:UUID, messageSignature:buffer[varint]}
-        return varint(0)  # empty array
+        #  массив {messageSender:UUID, messageSignature:buffer[varint]}
+        return varint(0)  # пустой массив
     if isinstance(ftype, list) and ftype:
         kind = ftype[0]
         if kind == "option":
@@ -159,7 +162,7 @@ def encode_field(ftype, value, tdefs=None):
                 if len(raw) < n:
                     raw = raw + b"\x00" * (n - len(raw))
                 return raw[:n]
-            # countType varint
+            #  countType = varint
             return varint(len(raw)) + raw
         if kind == "mapper":
             return varint(value)
@@ -173,17 +176,17 @@ def encode_field(ftype, value, tdefs=None):
                 return body
             return b""
         if kind == "container":
-            # value is list of (name, type, val) already encoded? treat value as list of values
+            #  значение — список (name, type, val) уже закодирован? считаем значение списком значений
             fields = ftype[1]
             body = b""
             vals = value if isinstance(value, list) else []
             for i, f in enumerate(fields):
                 body += encode_field(f.get("type"), vals[i] if i < len(vals) else None, tdefs)
             return body
-    # named type via tdefs
+    #  именованный тип через tdefs
     if tdefs and ftype in tdefs:
         return encode_field(tdefs[ftype], value, tdefs)
-    # fallback
+    #  запасной вариант
     return varint(value)
 
 
@@ -193,20 +196,20 @@ def handshake_payload(protocol: int, ip: str, port: int, next_state: int) -> byt
 
 def handshake_packet(protocol: int, ip: str, port: int, next_state: int) -> bytes:
     payload = handshake_payload(protocol, ip, port, next_state)
-    # frame length covers packet-id byte + payload
+    #  длина кадра покрывает байт id пакета + полезную нагрузку
     return varint(len(payload) + 1) + varint(0x00) + payload
 
 
 def status_request_packet() -> bytes:
-    """Full framed status request: packet id 0x00 in a 1-byte frame."""
+    """Полный упакованный status-запрос: id пакета 0x00 в однобайтовом кадре."""
     body = varint(0x00)
     return varint(len(body)) + body
 
 
 def status_response(data: bytes) -> dict:
-    """Parse 1.16+ status response: packet body is a JSON string directly."""
+    """Разбирает status-ответ 1.16+: тело пакета — сразу JSON-строка."""
     r = Reader(data, 0)
-    # 1.16+ status response: packet id (0x00) then JSON string
+    #  status-ответ 1.16+: id пакета (0x00), затем JSON-строка
     try:
         r.read_varint()
         j = r.read_string()
@@ -226,7 +229,7 @@ def status_response(data: bytes) -> dict:
                 return {"raw": j}
         except MCReadError:
             return {}
-    # legacy
+    #  legacy-протокол
     try:
         r2 = Reader(data, 0)
         version = r2.read_string()
@@ -249,7 +252,7 @@ async def read_exact_async(sock, n: int) -> bytes:
 
 
 async def read_frame_async(sock):
-    """Read one MC framed packet. Returns payload bytes (incl. inner packet id)."""
+    """Читать один кадр MC-пакета. Возвращает байты payload'а (включая внутренний id)."""
     length = 0
     shift = 0
     while True:
@@ -296,5 +299,5 @@ def read_frame_sync(sock) -> bytes:
 
 
 def parse_status(payload: bytes) -> dict:
-    """Parse the payload of a status response (after frame reading)."""
+    """Разбирает payload status-ответа (после чтения кадра)."""
     return status_response(payload)

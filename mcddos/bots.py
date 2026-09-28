@@ -1,18 +1,19 @@
-"""Bot pool: join, keepalive, chat, anti-bot evasion.
+"""
+Пул ботов: вход, keepalive, чат, обход анти-бота.
 
-Each bot is an MCConn running a background loop:
-  * keepalive (respond to server keepalives)
-  * periodic chat (spams chat)
-  * respawn handling on kick
-  * optional proxy rotation
+Каждый бот — это MCConn с фоновым циклом:
+  * keepalive (ответы на keepalive сервера)
+  * периодический чат (спам в чат)
+  * обработка respawn после кика
+  * необязательная ротация прокси
 """
 import asyncio
-import json
-import os
 import random
+import struct
 import time
 
 from .mcconn import MCConn, MCConnError, pkt_info
+from .mcconn import _extract_kick
 from . import bypass
 
 NAMES = [
@@ -88,7 +89,7 @@ class Bot:
                 if not self.joined:
                     await asyncio.sleep(random.uniform(1.0, 3.0))
                     continue
-                # keepalive loop
+                #  цикл keepalive (поддержание соединения)
                 await self._keepalive_loop()
             except MCConnError as e:
                 self._log("err", e)
@@ -101,7 +102,7 @@ class Bot:
                 await asyncio.sleep(random.uniform(0.5, 2.0))
 
     async def _keepalive_loop(self):
-        """Read packets, answer keepalives, chat periodically."""
+        """Читает пакеты, отвечает на keepalive, периодически пишет в чат."""
         next_chat = time.time() + random.uniform(1, self.chat_every)
         while not self._stop.is_set():
             pid, payload = await self.conn.read_one()
@@ -112,39 +113,33 @@ class Bot:
             info = pkt_info(self.conn.pvn)
             if pid == info.get("keep_alive_s2c"):
                 try:
-                    import struct
                     v = struct.unpack(">q", payload[:8])[0]
                     await self.conn.keepalive(v)
                 except Exception:
                     pass
             elif pid == info.get("play_disconnect"):
-                try:
-                    from .protocol import Reader
-                    r = Reader(payload, self.conn.pvn)
-                    reason = r.read_string()
-                except Exception:
-                    reason = "kicked"
+                reason = _extract_kick(payload, self.conn.pvn) or "kicked"
                 self.kicks += 1
                 self.joined = False
                 self._log("kicked:", reason)
                 return
             elif pid == info.get("respawn"):
-                # server respawned us; continue
+                #  сервер прислал respawn; продолжаем
                 pass
             elif pid == info.get("ping_s2c"):
                 try:
-                    import struct
                     v = struct.unpack(">i", payload[:4])[0]
                     await self.conn.pong(v)
                 except Exception:
                     pass
-            # chat timer
+            #  таймер чата
             if time.time() >= next_chat and self.conn.state == "play":
+                msg = random.choice(_CHAT_MSGS())
                 try:
-                    ok = await self.conn.chat(random.choice(_CHAT_MSGS()))
+                    ok = await self.conn.chat(msg)
                     if ok:
                         self.chats += 1
-                        self._log("chat", random.choice(_CHAT_MSGS())[:30])
+                        self._log("chat", msg[:30])
                 except Exception:
                     self.joined = False
                     return
@@ -187,7 +182,7 @@ class BotPool:
         n = n or self.count
         for i in range(len(self.bots), len(self.bots) + n):
             name = self.usernames[i % len(self.usernames)] if self.usernames else None
-            # proxy rotation: each bot gets its own egress IP (round-robin)
+            #  ротация прокси: каждый бот получает свой исходящий IP (round-robin)
             px = self.proxy
             if isinstance(px, (list, tuple)):
                 px = px[i % len(px)] if px else None
@@ -230,14 +225,3 @@ def _CHAT_MSGS():
         "offline mode", "no ban", "trust me", "first time here",
         "where is spawn", "tp to me", "gm", "gn", "thx", "ty",
     ]
-
-
-def _read_varint(data):
-    r = 0
-    s = 0
-    for i, b in enumerate(data[:5]):
-        r |= (b & 0x7F) << s
-        s += 7
-        if not (b & 0x80):
-            break
-    return r

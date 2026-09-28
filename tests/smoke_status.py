@@ -3,7 +3,7 @@ import os; _r=os.path.dirname(os.path.dirname(os.path.abspath(__file__))); sys.p
 from mcddos.mcconn import MCConn
 
 TESTS = [
-    ("hub.pvpg.net", 25565, "1.20.4"),      # hypixel-ish
+    ("hub.pvpg.net", 25565, "1.20.4"),  # похожие на hypixel
     ("mc.hypixel.net", 25565, "1.20"),
     ("play.nodecraft.com", 25565, "1.19"),
     ("mc.aurelius.gg", 25565, "1.21"),

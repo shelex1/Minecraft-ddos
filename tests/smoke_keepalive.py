@@ -17,7 +17,7 @@ async def main():
         pool.spawn(2)
         pool.start_all()
         joined = await wait_join(pool)
-        # now hold for `wait` seconds; keepalive should keep them alive
+        #  теперь держим `wait` секунд; keepalive должен удерживать соединение
         await asyncio.sleep(wait)
         s = pool.stats()
         ok = s['joined'] == s['total'] and s['kicks'] == 0

@@ -7,8 +7,10 @@
 """
 import asyncio, os, sys, time, struct
 
-sys.path.insert(0, '/home/agent/work/gh-minecraft-ddos')
-os.chdir('/home/agent/work/gh-minecraft-ddos')
+# корень репозитория определяем от расположения самого теста (без хардкода пути)
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 from mcddos import mcconn, bypass, ddos
 from mcddos import bots as bots_mod
 
@@ -35,7 +37,7 @@ async def t1_login_chat():
     if not ok:
         await c.close(); return
     check("player_uuid получен", c.player_uuid is not None)
-    # signed chat
+    #  подписанный чат (signed chat)
     ok = await c.chat("signed hello from solo")
     check("signed chat ok", ok)
     await asyncio.sleep(1.5)

@@ -29,12 +29,11 @@ import asyncio
 import json
 import os
 import random
-import re
 import socket
 import sys
 import time
 
-# allow running from any directory (package may be in a parent dir)
+#  позволяем запуск из любого каталога (пакет может лежать на уровень выше)
 _HERE = os.path.dirname(os.path.abspath(__file__))
 for _p in (_HERE, os.path.dirname(_HERE), os.path.dirname(os.path.dirname(_HERE)), os.getcwd()):
     if os.path.isdir(os.path.join(_p, "mcddos")):
@@ -47,7 +46,7 @@ from mcddos.protocol import Reader                                              
 from mcddos import realip as realip_mod                                         # noqa: E402
 from mcddos.proxies import parse_proxy_line, fetch_proxies                      # noqa: E402
 
-# protocols most-likely first (subset of 735..777)
+#  протоколы: сначала наиболее вероятные (подмножество 735..777)
 ALL_PROTOCOLS = [775, 774, 773, 772, 771, 770, 769, 768, 767, 766, 765,
                  764, 763, 762, 761, 760, 759, 758, 757, 756, 755, 754,
                  753, 751, 735]
@@ -65,7 +64,7 @@ def log(*a):
 
 
 def extract_kick_text(payload, pvn):
-    """Re-export from mcconn for clarity."""
+    """Ре-экспорт из mcconn для наглядности."""
     return _extract_kick(payload, pvn)
 
 
@@ -93,10 +92,10 @@ def classify_kick(text):
 
 
 # ---------------------------------------------------------------------------
-# phase 1: auto version detect (status sweep)
+#  фаза 1: авто-детект версии (status sweep)
 # ---------------------------------------------------------------------------
 async def detect_version(host, port, proxies, timeout, workers, direct=True):
-    """Return (pvn, info, working_label, working_proxy) or (None,...)."""
+    """Возвращает (pvn, info, метка_источника, прокси) либо (None, ...)."""
     sources = []
     if direct:
         sources.append(("direct", None))
@@ -140,10 +139,10 @@ async def detect_version(host, port, proxies, timeout, workers, direct=True):
 
 
 # ---------------------------------------------------------------------------
-# phase 2: real player login + keepalive + chat + stay
+#  фаза 2: вход как реальный игрок + keepalive + чат + удержание
 # ---------------------------------------------------------------------------
 async def play_once(host, port, pvn, name, stay, chat_msg, proxy, timeout):
-    """One full real-player session. Returns a report dict."""
+    """Одна полноценная сессия «реального игрока». Возвращает dict-отчёт."""
     _t0 = time.time()
     rep = {"joined": False, "join_game": False, "kick": None, "kick_type": None,
            "online_mode": False, "backend": None, "keeps": 0, "chats": 0,
@@ -170,7 +169,7 @@ async def play_once(host, port, pvn, name, stay, chat_msg, proxy, timeout):
             if c._join_game is not None:
                 rep["join_game"] = True
                 rep["seen_packets"].append("join_game")
-            # stay & keep alive
+            #  держим соединение и отвечаем на keepalive
             t_end = time.time() + stay
             next_chat = time.time() + random.uniform(2, 8)
             while time.time() < t_end and not c._closed:
@@ -227,7 +226,7 @@ async def play_once(host, port, pvn, name, stay, chat_msg, proxy, timeout):
 
 
 # ---------------------------------------------------------------------------
-# main
+#  main (точка входа)
 # ---------------------------------------------------------------------------
 async def amain(args):
     host, port = args.host, args.port
@@ -240,7 +239,7 @@ async def amain(args):
               "kick_texts": []}
     t_start = time.time()
 
-    # ---- phase 0: DNS / TCP ----
+    #  ---- фаза 0: DNS / TCP ----
     log(f"\n=== [0] DNS/TCP :: {host}:{port} ===")
     try:
         ips = sorted({i[4][0] for i in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)})
@@ -254,7 +253,7 @@ async def amain(args):
     except Exception as e:
         log(f"  TCP: closed ({type(e).__name__})")
 
-    # SRV record: many servers hide the real MC port behind SRV (_minecraft._tcp)
+    #  SRV-запись: многие серверы прячут настоящий MC-порт за SRV (_minecraft._tcp)
     if not args.no_srv:
         srv_p = await asyncio.get_running_loop().run_in_executor(None, realip_mod.srv_port, host)
         if srv_p:
@@ -265,7 +264,7 @@ async def amain(args):
                 port = srv_p
                 result["port"] = port
 
-    # ---- proxies ----
+    #  ---- прокси ----
     proxies = []
     seen = set()
 
@@ -295,7 +294,7 @@ async def amain(args):
     if args.max_proxies:
         proxies = proxies[:args.max_proxies]
 
-    # ---- phase 1: version ----
+    #  ---- фаза 1: версия ----
     log(f"\n=== [1] Version detect ===")
     pvn = None
     if args.version:
@@ -319,10 +318,10 @@ async def amain(args):
             result["notes"].append("version not detected (status sweep failed)")
             log("  -> NOT DETECTED")
 
-    # ---- phase 2: real player login(s) ----
+    #  ---- фаза 2: вход как реальный игрок ----
     log(f"\n=== [2] Real-player login (name={args.name}) ===")
     if pvn is None:
-        pvn = 767  # best guess
+        pvn = 767  # наилучшая догадка
         result["notes"].append("no version detected; guessing protocol 767")
 
     sources = []
@@ -360,24 +359,24 @@ async def amain(args):
                 result["kick"] = rep["kick"]
                 result["kick_type"] = rep["kick_type"]
             break
-        # if we got a definitive kick (captcha/reg/whitelist/online-mode), stop
+        #  если получили однозначный кик (капча/регистрация/whitelist/online-mode) — стоп
         if rep["kick_type"] in ("captcha", "registration", "whitelist", "online_mode"):
             result["kick"] = rep["kick"]
             result["kick_type"] = rep["kick_type"]
             result["working_source"] = label
             break
 
-    # online mode detection
+    #  определение online-mode
     if any("online mode" in (k or "").lower() for k in result["kick_texts"]):
         result["online_mode"] = True
         result["kick_type"] = "online_mode"
 
-    # ---- phase 2.5: login DIRECTLY to the discovered real backend ----
+    #  ---- фаза 2.5: login НАПРЯМУЮ в найденный реальный бэкенд ----
     if (not result["joined"] and result["real_ip"]
             and result.get("real_backend_port") and not args.no_backend_login):
         bport = result["real_backend_port"]
         bproto = pvn
-        # use the protocol reported by the backend itself if we have it
+        #  если бэкенд сообщил свой protocol — используем его
         for d in result.get("discovered", []):
             if d.get("port") == bport:
                 break
@@ -406,7 +405,7 @@ async def amain(args):
             if rep2["kick_type"] == "online_mode":
                 result["online_mode"] = True
 
-    # ---- phase 3: real-IP discovery (prelogin + same-host ports + /24 subnet) ----
+    #  ---- фаза 3: поиск реального IP (prelogin + порты того же хоста + /24) ----
     log(f"\n=== [3] Real-IP discovery ===")
     try:
         force_subnet = bool(args.scan_subnet or (result["real_ip"] and not result["joined"]))
@@ -420,7 +419,7 @@ async def amain(args):
         for f in found:
             tag = "MOTD-MATCH" if f.get("match") else f.get("via", "?")
             log(f"  candidate: {f.get('ip')}:{f.get('port')} ({tag})")
-        # ranking: MOTD-match > prelogin (bungee/velocity) > subnet > direct
+        #  ранжирование: совпадение MOTD > prelogin (bungee/velocity) > подсеть > напрямую
         def rank(f):
             if f.get("match"):
                 return 0
@@ -432,7 +431,7 @@ async def amain(args):
             return 3
         for f in sorted(found, key=rank):
             if f.get("via") == "direct" and f.get("ip") == host:
-                continue  # frontend itself; only a fallback
+                continue  # сам фронтенд; это только запасной вариант
             if not result["real_ip"]:
                 result["real_ip"] = f.get("ip")
                 result["real_backend_port"] = f.get("port")
@@ -444,7 +443,7 @@ async def amain(args):
     except Exception as e:
         log(f"  discovery error: {type(e).__name__}: {e}")
 
-    # ---- verdict ----
+    #  ---- вердикт ----
     if result["joined"] and result["join_game"]:
         result["verdict"] = "JOINED (реально в мире: join_game получен)"
     elif result["joined"]:
@@ -462,7 +461,7 @@ async def amain(args):
 
     result["elapsed"] = round(time.time() - t_start, 1)
 
-    # ---- print ----
+    #  ---- вывод ----
     log("\n" + "=" * 60)
     log("RESULT (JSON)")
     log("=" * 60)

